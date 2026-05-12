@@ -4,7 +4,7 @@ Linwarden can publish SARIF into GitHub code scanning or attach human-readable M
 
 ## Code Scanning
 
-Use this workflow when the repository contains a Linux fixture root, image extract, or mounted root prepared by earlier CI steps.
+Use the composite action when the repository contains a Linux fixture root, image extract, or mounted root prepared by earlier CI steps.
 
 ```yaml
 name: Linwarden
@@ -25,24 +25,13 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v6
 
-      - name: Set up Python
-        uses: actions/setup-python@v6
+      - name: Run Linwarden
+        uses: kingkyylian/linwarden@v0.7.0
         with:
-          python-version: "3.13"
-
-      - name: Install Linwarden from source
-        run: python -m pip install .
-
-      - name: Generate SARIF
-        run: linwarden scan --root tests/fixtures/linux-root --format sarif --output linwarden.sarif --fail-on critical
-
-      - name: Validate SARIF
-        run: python -m json.tool linwarden.sarif > /dev/null
-
-      - name: Upload SARIF
-        uses: github/codeql-action/upload-sarif@v4
-        with:
-          sarif_file: linwarden.sarif
+          root: tests/fixtures/linux-root
+          format: sarif
+          fail-on: critical
+          upload-sarif: "true"
 ```
 
 ## Markdown Job Summary
@@ -50,11 +39,29 @@ jobs:
 Use this workflow for operators who want the report directly in the Actions run.
 
 ```yaml
-- name: Generate Markdown report
-  run: linwarden scan --root tests/fixtures/linux-root --format markdown --output linwarden-report.md --fail-on off
+- name: Run Linwarden
+  uses: kingkyylian/linwarden@v0.7.0
+  with:
+    root: tests/fixtures/linux-root
+    format: markdown
+    fail-on: off
+    add-summary: "true"
+```
 
-- name: Add report to job summary
-  run: cat linwarden-report.md >> "$GITHUB_STEP_SUMMARY"
+## Effective SSH Context
+
+Use multiline `sshd-match` input when OpenSSH `Match` blocks need a concrete connection context.
+
+```yaml
+- name: Run Linwarden with SSH Match context
+  uses: kingkyylian/linwarden@v0.7.0
+  with:
+    root: /
+    format: json
+    sshd-mode: effective
+    sshd-match: |
+      user=deploy
+      addr=203.0.113.10
 ```
 
 ## Thresholds

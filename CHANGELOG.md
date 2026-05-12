@@ -2,6 +2,12 @@
 
 All notable changes to Linwarden are documented here.
 
+## 0.7.0 - 2026-05-12
+
+- Added a composite GitHub Action wrapper for running Linwarden with `uses: kingkyylian/linwarden@v0.7.0`.
+- Added action inputs for report format, output path, fail threshold, config, SSH mode, SSH Match context, SARIF upload, and Markdown job summaries.
+- Updated GitHub Actions docs with copy-paste workflows for code scanning, job summaries, and effective SSH context.
+
 ## 0.6.0 - 2026-05-12
 
 - Added OpenSSH `sshd -T -C` Match context support through repeatable `--sshd-match KEY=VALUE`.

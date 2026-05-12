@@ -3,8 +3,8 @@
 Linwarden releases are tag-driven.
 
 ```bash
-git tag v0.6.0
-git push origin v0.6.0
+git tag v0.7.0
+git push origin v0.7.0
 ```
 
 The release workflow validates the project, builds source and wheel artifacts, and writes `dist/SHA256SUMS`.

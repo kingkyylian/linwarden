@@ -1,0 +1,134 @@
+name: Linwarden
+description: Rootless Linux hardening scan with Markdown, JSON, or SARIF output.
+author: Linwarden contributors
+
+inputs:
+  root:
+    description: Filesystem root to inspect.
+    default: "/"
+  format:
+    description: "Report format: markdown, json, or sarif."
+    default: "sarif"
+  output:
+    description: Report output path. Defaults by format when empty.
+    default: ""
+  fail-on:
+    description: "Finding severity threshold: off, low, medium, high, or critical."
+    default: "high"
+  config:
+    description: Optional Linwarden JSON config path.
+    default: ""
+  sshd-mode:
+    description: "SSH collection mode: static, effective, or auto."
+    default: "static"
+  sshd-binary:
+    description: sshd binary to use with effective or auto mode.
+    default: "sshd"
+  sshd-match:
+    description: Multiline OpenSSH Match context entries such as user=deploy and addr=203.0.113.10.
+    default: ""
+  upload-sarif:
+    description: Upload SARIF to GitHub code scanning when format is sarif.
+    default: "false"
+  add-summary:
+    description: Append Markdown output to the GitHub Actions job summary when format is markdown.
+    default: "false"
+  python-version:
+    description: Python version used to run Linwarden.
+    default: "3.13"
+
+outputs:
+  report-path:
+    description: Path to the generated report file.
+    value: ${{ steps.scan.outputs['report-path'] }}
+  exit-code:
+    description: Linwarden scan exit code.
+    value: ${{ steps.scan.outputs['exit-code'] }}
+
+runs:
+  using: composite
+  steps:
+    - name: Set up Python
+      uses: actions/setup-python@v6
+      with:
+        python-version: ${{ inputs.python-version }}
+
+    - name: Install Linwarden
+      shell: bash
+      run: python -m pip install "$GITHUB_ACTION_PATH"
+
+    - name: Run Linwarden
+      id: scan
+      shell: bash
+      env:
+        ROOT: ${{ inputs.root }}
+        FORMAT: ${{ inputs.format }}
+        OUTPUT: ${{ inputs.output }}
+        FAIL_ON: ${{ inputs.fail-on }}
+        CONFIG: ${{ inputs.config }}
+        SSHD_MODE: ${{ inputs.sshd-mode }}
+        SSHD_BINARY: ${{ inputs.sshd-binary }}
+        SSHD_MATCH: ${{ inputs.sshd-match }}
+      run: |
+        set -euo pipefail
+
+        report_path="$OUTPUT"
+        if [ -z "$report_path" ]; then
+          case "$FORMAT" in
+            markdown) report_path="linwarden-report.md" ;;
+            json) report_path="linwarden-report.json" ;;
+            sarif) report_path="linwarden.sarif" ;;
+            *) echo "unsupported format: $FORMAT" >&2; exit 1 ;;
+          esac
+        fi
+
+        args=(
+          scan
+          --root "$ROOT"
+          --format "$FORMAT"
+          --output "$report_path"
+          --fail-on "$FAIL_ON"
+          --sshd-mode "$SSHD_MODE"
+          --sshd-binary "$SSHD_BINARY"
+        )
+
+        if [ -n "$CONFIG" ]; then
+          args+=(--config "$CONFIG")
+        fi
+
+        while IFS= read -r match_context; do
+          if [ -n "$match_context" ]; then
+            args+=(--sshd-match "$match_context")
+          fi
+        done <<< "$SSHD_MATCH"
+
+        set +e
+        linwarden "${args[@]}"
+        status=$?
+        set -e
+
+        {
+          echo "report-path=$report_path"
+          echo "exit-code=$status"
+        } >> "$GITHUB_OUTPUT"
+
+    - name: Upload SARIF
+      if: ${{ inputs.upload-sarif == 'true' && inputs.format == 'sarif' }}
+      uses: github/codeql-action/upload-sarif@v4
+      with:
+        sarif_file: ${{ steps.scan.outputs['report-path'] }}
+
+    - name: Add Markdown report to job summary
+      if: ${{ inputs.add-summary == 'true' && inputs.format == 'markdown' }}
+      shell: bash
+      run: |
+        set -euo pipefail
+        report_path="${{ steps.scan.outputs['report-path'] }}"
+        if [ -f "$report_path" ]; then
+          cat "$report_path" >> "$GITHUB_STEP_SUMMARY"
+        fi
+
+    - name: Fail on Linwarden threshold
+      if: ${{ steps.scan.outputs['exit-code'] != '0' }}
+      shell: bash
+      run: exit "${{ steps.scan.outputs['exit-code'] }}"

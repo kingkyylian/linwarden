@@ -3,6 +3,7 @@ from __future__ import annotations
 import platform
 import socket
 import subprocess
+import time
 from pathlib import Path
 from typing import Optional, Union
 
@@ -146,6 +147,7 @@ def _parse_key_value_lines(text: str) -> dict[str, str]:
 
 def _read_package_status(root: Path, os_release: dict[str, str]) -> PackageStatus:
     manager = _package_manager(os_release)
+    metadata_age_days, metadata_source = _read_package_metadata_age(root, manager)
     update_notifier = root / "var" / "lib" / "update-notifier" / "updates-available"
     update_text = read_text(update_notifier)
     if update_text:
@@ -154,8 +156,17 @@ def _read_package_status(root: Path, os_release: dict[str, str]) -> PackageStatu
             updates_available=_first_int(update_text, "packages can be updated"),
             security_updates=_first_int(update_text, "updates are security updates"),
             source=str(update_notifier),
+            metadata_age_days=metadata_age_days,
+            metadata_source=metadata_source,
         )
-    return PackageStatus(manager=manager, updates_available=None, security_updates=None, source="not found")
+    return PackageStatus(
+        manager=manager,
+        updates_available=None,
+        security_updates=None,
+        source="not found",
+        metadata_age_days=metadata_age_days,
+        metadata_source=metadata_source,
+    )
 
 
 def _package_manager(os_release: dict[str, str]) -> str:
@@ -181,6 +192,43 @@ def _first_int(text: str, marker: str) -> Optional[int]:
             if part.isdigit():
                 return int(part)
     return None
+
+
+def _read_package_metadata_age(root: Path, manager: str) -> tuple[Optional[int], str]:
+    newest_mtime: Optional[float] = None
+    newest_source: Optional[Path] = None
+    for path in _package_metadata_candidates(root, manager):
+        try:
+            mtime = path.stat().st_mtime
+        except OSError:
+            continue
+        if newest_mtime is None or mtime > newest_mtime:
+            newest_mtime = mtime
+            newest_source = path
+
+    if newest_mtime is None or newest_source is None:
+        return None, "not found"
+
+    age_days = max(0, int((time.time() - newest_mtime) // 86400))
+    return age_days, str(newest_source)
+
+
+def _package_metadata_candidates(root: Path, manager: str) -> tuple[Path, ...]:
+    if manager == "apt":
+        return (
+            root / "var" / "lib" / "apt" / "periodic" / "update-success-stamp",
+            root / "var" / "cache" / "apt" / "pkgcache.bin",
+        )
+    if manager == "dnf":
+        return (
+            root / "var" / "cache" / "dnf" / "expired_repos.json",
+            root / "var" / "cache" / "dnf",
+        )
+    if manager == "pacman":
+        return tuple(sorted((root / "var" / "lib" / "pacman" / "sync").glob("*.db")))
+    if manager == "apk":
+        return tuple(sorted((root / "var" / "cache" / "apk").glob("APKINDEX*.tar.gz")))
+    return ()
 
 
 def _read_firewall_status(etc_root: Path) -> FirewallStatus:

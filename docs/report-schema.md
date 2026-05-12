@@ -1,12 +1,12 @@
 # JSON Report Schema
 
-Linwarden JSON reports are intended for CI and fleet ingestion. The current schema version is `1.2`.
+Linwarden JSON reports are intended for CI and fleet ingestion. The current schema version is `1.3`.
 
 ## Top-Level Shape
 
 ```json
 {
-  "schema_version": "1.2",
+  "schema_version": "1.3",
   "host": {},
   "summary": {},
   "findings": [],
@@ -29,6 +29,17 @@ Linwarden JSON reports are intended for CI and fleet ingestion. The current sche
 | `sshd_source` | string | `static` or `effective`. |
 | `package_status` | object | Package manager and update counts when known. |
 | `firewall_status` | object | Host firewall provider and enabled state when known. |
+
+## Package Status
+
+| Field | Type | Description |
+| --- | --- | --- |
+| `manager` | string | Inferred package manager such as `apt`, `dnf`, `pacman`, `apk`, or `unknown`. |
+| `updates_available` | integer or null | Pending package update count when a rootless status source exposes it. |
+| `security_updates` | integer or null | Pending security update count when a rootless status source exposes it. |
+| `source` | string | Source used for update counts, or `not found`. |
+| `metadata_age_days` | integer or null | Age of the newest known local package metadata marker. |
+| `metadata_source` | string | Source used for metadata age, or `not found`. |
 
 ## Summary
 

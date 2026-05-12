@@ -31,6 +31,8 @@ class CollectorTests(unittest.TestCase):
         self.assertEqual(snapshot.package_status.manager, "apt")
         self.assertEqual(snapshot.package_status.updates_available, 12)
         self.assertEqual(snapshot.package_status.security_updates, 5)
+        self.assertIsNone(snapshot.package_status.metadata_age_days)
+        self.assertEqual(snapshot.package_status.metadata_source, "not found")
         self.assertEqual(snapshot.firewall_status.provider, "ufw")
         self.assertEqual(snapshot.firewall_status.enabled, False)
         self.assertEqual(snapshot.mounts[0].mount_point, "/")

@@ -33,6 +33,8 @@ class PackageStatus:
     updates_available: Optional[int]
     security_updates: Optional[int]
     source: str
+    metadata_age_days: Optional[int] = None
+    metadata_source: str = "not found"
 
 
 @dataclass(frozen=True)

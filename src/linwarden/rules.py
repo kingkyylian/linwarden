@@ -230,6 +230,24 @@ def evaluate_snapshot(snapshot: HostSnapshot) -> list[Finding]:
             )
         )
 
+    metadata_age_days = snapshot.package_status.metadata_age_days
+    if metadata_age_days is not None and metadata_age_days > 14:
+        findings.append(
+            Finding(
+                rule_id="LNX-PKG-003",
+                severity="medium",
+                title="Package metadata is stale",
+                category="packages",
+                evidence=(
+                    f"{snapshot.package_status.manager} package metadata is "
+                    f"{metadata_age_days} days old"
+                ),
+                impact="Stale package metadata can hide available fixes from update checks and audit jobs.",
+                remediation="Refresh package metadata with the system package manager before trusting update counts.",
+                references=("man:apt(8)", "man:dnf(8)", "man:pacman(8)", "man:apk(8)"),
+            )
+        )
+
     if snapshot.firewall_status.provider != "unknown" and snapshot.firewall_status.enabled is False:
         findings.append(
             Finding(

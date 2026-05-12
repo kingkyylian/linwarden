@@ -121,6 +121,13 @@ Linwarden uses static, rootless evidence by default. For SSH, static mode reads 
 - Impact: Known security fixes have not been applied to this host.
 - Remediation: Prioritize applying pending security updates and restart affected services if required.
 
+### LNX-PKG-003: Package metadata is stale
+
+- Severity: medium
+- Evidence: age of the newest known local package metadata marker.
+- Impact: Stale package metadata can hide available fixes from update checks and audit jobs.
+- Remediation: Refresh package metadata with the system package manager before trusting update counts.
+
 ## Firewall Rules
 
 ### LNX-FW-001: Host firewall is disabled

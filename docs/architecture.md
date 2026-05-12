@@ -38,6 +38,7 @@ The collector reads files that are normally world-readable on Linux hosts:
 - `/proc/uptime`
 - selected `/proc/sys/...` sysctl values
 - `/var/lib/update-notifier/updates-available` when present
+- package manager metadata markers such as APT update stamps, DNF cache metadata, Pacman sync databases, and APK index caches
 - `/etc/ufw/ufw.conf` when present
 
 SSH collection defaults to static file parsing. When `--sshd-mode effective` is selected, Linwarden executes `sshd -T -f <config>` and records `sshd_source` as `effective`.

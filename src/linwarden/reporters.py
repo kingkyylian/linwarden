@@ -16,7 +16,7 @@ def render_json(
     suppressed_findings: tuple[SuppressedFinding, ...] = (),
 ) -> str:
     payload = {
-        "schema_version": "1.2",
+        "schema_version": "1.3",
         "host": _host_payload(snapshot),
         "summary": asdict(summarize_findings(list(findings))),
         "findings": [asdict(finding) for finding in findings],

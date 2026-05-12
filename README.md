@@ -13,6 +13,7 @@ The project goal is practical: give maintainers a small, auditable tool that exp
 - JSON config support for profiles, disabled rules, and justified suppressions.
 - Optional effective OpenSSH config collection through `sshd -T`.
 - Package update and host firewall posture signals where rootless files expose them.
+- Package metadata freshness checks for common package manager cache markers.
 - Severity scoring with `critical`, `high`, `medium`, and `low` buckets.
 - CI-friendly exit thresholds through `--fail-on`.
 - Fixture-root scanning for tests, containers, forensic copies, and offline analysis.
@@ -115,6 +116,7 @@ Suppressed findings remain visible in JSON and Markdown reports. SARIF output in
 | `LNX-NET-004` | low | Network | `net.ipv6.conf.all.accept_redirects=1` is enabled. |
 | `LNX-PKG-001` | medium | Packages | Package updates are available. |
 | `LNX-PKG-002` | high | Packages | Security package updates are available. |
+| `LNX-PKG-003` | medium | Packages | Package metadata is stale. |
 | `LNX-FW-001` | medium | Firewall | A known host firewall is disabled. |
 
 Rule details live in [docs/rules.md](docs/rules.md).
@@ -176,6 +178,7 @@ Linwarden is read-only by default. It does not modify host state, load kernel mo
 
 - Static SSH mode reads `sshd_config` plus simple `Include` directives; `Match` behavior may differ from effective OpenSSH config.
 - Effective SSH mode executes `sshd -T`; use it only when scanning the live host intentionally.
+- Package metadata age relies on local cache marker mtimes and does not call package manager commands.
 - Missing files are treated as absent data so scans can run in containers and fixture roots.
 - Linwarden is a hardening triage tool, not a full CIS or DISA STIG compliance scanner.
 
@@ -185,7 +188,7 @@ Please report vulnerabilities using [SECURITY.md](SECURITY.md).
 
 - Optional systemd unit inventory.
 - Additional bridge networking and firewall rules.
-- Package manager freshness adapters beyond update-notifier status files.
+- Package vulnerability feed adapters beyond local package manager metadata.
 - Signed release artifacts.
 
 ## License

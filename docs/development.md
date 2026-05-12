@@ -50,4 +50,4 @@ This keeps tests stable on macOS, Linux, and CI.
 
 ## Release Workflow
 
-Pushing a tag like `v0.4.0` runs tests, compile, Ruff, and mypy, builds source and wheel artifacts, then creates a GitHub Release with generated notes.
+Pushing a tag like `v0.5.0` runs tests, compile, Ruff, and mypy, builds source and wheel artifacts, then creates a GitHub Release with generated notes.

@@ -2,6 +2,12 @@
 
 All notable changes to Linwarden are documented here.
 
+## 0.5.0 - 2026-05-12
+
+- Added package metadata age collection for APT, DNF, Pacman, and APK cache markers.
+- Added `LNX-PKG-003` for stale package metadata.
+- Expanded JSON package status metadata and bumped report schema to `1.3`.
+
 ## 0.4.0 - 2026-05-12
 
 - Added explicit `--sshd-mode effective` and `--sshd-mode auto` support using `sshd -T`.

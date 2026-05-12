@@ -1,0 +1,153 @@
+{
+  "findings": [
+    {
+      "category": "ssh",
+      "evidence": "PermitRootLogin yes",
+      "impact": "Remote attackers can attempt direct privileged logins instead of going through named accounts.",
+      "references": [
+        "man:sshd_config(5)"
+      ],
+      "remediation": "Set PermitRootLogin no in sshd_config and reload sshd.",
+      "rule_id": "LNX-SSH-001",
+      "severity": "high",
+      "title": "SSH root login is permitted"
+    },
+    {
+      "category": "ssh",
+      "evidence": "PasswordAuthentication yes",
+      "impact": "Password-based SSH increases exposure to credential stuffing and weak password attacks.",
+      "references": [
+        "man:sshd_config(5)"
+      ],
+      "remediation": "Prefer key-based SSH and set PasswordAuthentication no after confirming access.",
+      "rule_id": "LNX-SSH-002",
+      "severity": "medium",
+      "title": "SSH password authentication is enabled"
+    },
+    {
+      "category": "kernel",
+      "evidence": "kernel.randomize_va_space=0",
+      "impact": "Memory corruption exploits become easier when process address layouts are predictable.",
+      "references": [
+        "https://docs.kernel.org/admin-guide/sysctl/kernel.html"
+      ],
+      "remediation": "Set kernel.randomize_va_space=2 with sysctl and persist it under /etc/sysctl.d/.",
+      "rule_id": "LNX-KRN-001",
+      "severity": "high",
+      "title": "Address space layout randomization is disabled"
+    },
+    {
+      "category": "network",
+      "evidence": "net.ipv4.ip_forward=1",
+      "impact": "The host can route traffic between interfaces, which broadens blast radius if unintended.",
+      "references": [
+        "https://docs.kernel.org/networking/ip-sysctl.html"
+      ],
+      "remediation": "Set net.ipv4.ip_forward=0 unless this system is intentionally acting as a router.",
+      "rule_id": "LNX-NET-001",
+      "severity": "medium",
+      "title": "IPv4 forwarding is enabled"
+    },
+    {
+      "category": "network",
+      "evidence": "net.ipv4.conf.all.accept_redirects=1",
+      "impact": "Malicious redirects can influence host routing decisions on hostile networks.",
+      "references": [
+        "https://docs.kernel.org/networking/ip-sysctl.html"
+      ],
+      "remediation": "Set net.ipv4.conf.all.accept_redirects=0 unless redirects are explicitly required.",
+      "rule_id": "LNX-NET-002",
+      "severity": "low",
+      "title": "IPv4 ICMP redirects are accepted"
+    },
+    {
+      "category": "kernel",
+      "evidence": "vm.mmap_min_addr=0",
+      "impact": "Low-address memory mappings can make kernel null-pointer bugs easier to exploit.",
+      "references": [
+        "https://docs.kernel.org/admin-guide/sysctl/vm.html"
+      ],
+      "remediation": "Set vm.mmap_min_addr to at least 65536 unless a legacy workload requires otherwise.",
+      "rule_id": "LNX-KRN-002",
+      "severity": "high",
+      "title": "Low memory mappings are not protected"
+    }
+  ],
+  "host": {
+    "hostname": "fixture-box",
+    "kernel_release": "6.8.7-fixture",
+    "load_average": {
+      "fifteen_minutes": 0.33,
+      "five_minutes": 0.37,
+      "one_minute": 0.42
+    },
+    "memory": {
+      "available_mib": 8000,
+      "swap_free_mib": 1024,
+      "swap_total_mib": 2048,
+      "total_mib": 16000
+    },
+    "mounts": [
+      {
+        "filesystem": "rootfs",
+        "mount_point": "/",
+        "options": [
+          "rw"
+        ],
+        "source": "rootfs"
+      },
+      {
+        "filesystem": "tmpfs",
+        "mount_point": "/tmp",
+        "options": [
+          "rw",
+          "nosuid",
+          "nodev",
+          "noexec"
+        ],
+        "source": "tmpfs"
+      },
+      {
+        "filesystem": "proc",
+        "mount_point": "/proc",
+        "options": [
+          "rw",
+          "nosuid",
+          "nodev",
+          "noexec",
+          "relatime"
+        ],
+        "source": "proc"
+      }
+    ],
+    "os": {
+      "BUG_REPORT_URL": "https://bugs.debian.org/",
+      "HOME_URL": "https://www.debian.org/",
+      "ID": "debian",
+      "NAME": "Debian GNU/Linux",
+      "PRETTY_NAME": "Debian GNU/Linux 12 (bookworm)",
+      "SUPPORT_URL": "https://www.debian.org/support",
+      "VERSION": "12 (bookworm)",
+      "VERSION_CODENAME": "bookworm",
+      "VERSION_ID": "12"
+    },
+    "sysctls": {
+      "kernel.randomize_va_space": "0",
+      "net.ipv4.conf.all.accept_redirects": "1",
+      "net.ipv4.ip_forward": "1",
+      "vm.mmap_min_addr": "0"
+    },
+    "uptime_seconds": 12345.67
+  },
+  "schema_version": "1.0",
+  "summary": {
+    "by_severity": {
+      "critical": 0,
+      "high": 3,
+      "low": 1,
+      "medium": 2
+    },
+    "score": 17,
+    "total": 6
+  }
+}

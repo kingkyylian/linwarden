@@ -1,0 +1,50 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "linwarden"
+version = "0.1.0"
+description = "Rootless Linux host inventory and hardening audit CLI."
+readme = "README.md"
+requires-python = ">=3.9"
+license = { file = "LICENSE" }
+authors = [
+  { name = "Linwarden contributors" }
+]
+keywords = [
+  "linux",
+  "security",
+  "hardening",
+  "inventory",
+  "audit",
+  "cli",
+  "sysadmin"
+]
+classifiers = [
+  "Development Status :: 3 - Alpha",
+  "Environment :: Console",
+  "Intended Audience :: System Administrators",
+  "License :: OSI Approved :: MIT License",
+  "Operating System :: POSIX :: Linux",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.9",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+  "Topic :: Security",
+  "Topic :: System :: Monitoring"
+]
+dependencies = []
+
+[project.urls]
+Homepage = "https://github.com/kingkyylian/linwarden"
+Documentation = "https://github.com/kingkyylian/linwarden/tree/main/docs"
+Issues = "https://github.com/kingkyylian/linwarden/issues"
+
+[project.scripts]
+linwarden = "linwarden.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]

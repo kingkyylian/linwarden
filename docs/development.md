@@ -1,0 +1,31 @@
+# Development
+
+## Requirements
+
+- Python 3.9 or newer.
+- `make` for convenience targets.
+- No runtime services.
+
+## Commands
+
+```bash
+make test
+make compile
+make smoke
+```
+
+`make compile` writes bytecode under the project-local `.pycache` directory so local sandboxed environments do not need access to user-level Python cache directories.
+
+## Test Strategy
+
+The test suite does not inspect the developer machine. It uses `tests/fixtures/linux-root` as a deterministic Linux root and passes that root into the collector.
+
+This keeps tests stable on macOS, Linux, and CI.
+
+## Release Checklist
+
+1. Update `CHANGELOG.md`.
+2. Confirm `pyproject.toml` version matches `src/linwarden/__init__.py`.
+3. Run `make test`.
+4. Run `make compile`.
+5. Tag the release after CI passes.

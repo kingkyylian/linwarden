@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import shlex
 from pathlib import Path
+from typing import Optional
 
 from .models import LoadAverage, MemoryInfo, Mount
 
@@ -30,7 +31,16 @@ def parse_os_release(path: Path) -> dict[str, str]:
 
 
 def parse_sshd_config(path: Path) -> dict[str, str]:
+    return _parse_sshd_config_file(path, seen=set(), depth=0)
+
+
+def _parse_sshd_config_file(path: Path, seen: set[Path], depth: int) -> dict[str, str]:
     values: dict[str, str] = {}
+    resolved = _resolve_path(path)
+    if resolved is None or resolved in seen or depth > 8:
+        return values
+    seen.add(resolved)
+
     for raw_line in read_text(path).splitlines():
         line = raw_line.strip()
         if not line or line.startswith("#"):
@@ -38,9 +48,51 @@ def parse_sshd_config(path: Path) -> dict[str, str]:
         if "#" in line:
             line = line.split("#", 1)[0].strip()
         parts = line.split(None, 1)
-        if len(parts) == 2:
-            values[parts[0].lower()] = parts[1].strip()
+        if len(parts) != 2:
+            continue
+
+        key = parts[0].lower()
+        value = parts[1].strip()
+        if key == "include":
+            for include_key, include_value in _parse_sshd_includes(
+                path.parent,
+                value,
+                seen,
+                depth + 1,
+            ).items():
+                values.setdefault(include_key, include_value)
+        else:
+            values.setdefault(key, value)
     return values
+
+
+def _parse_sshd_includes(
+    base_dir: Path,
+    patterns: str,
+    seen: set[Path],
+    depth: int,
+) -> dict[str, str]:
+    values: dict[str, str] = {}
+    try:
+        include_patterns = shlex.split(patterns, comments=False, posix=True)
+    except ValueError:
+        include_patterns = patterns.split()
+
+    for pattern in include_patterns:
+        include_path = Path(pattern)
+        if not include_path.is_absolute():
+            include_path = base_dir / include_path
+        for match in sorted(include_path.parent.glob(include_path.name)):
+            if match.is_file():
+                values.update(_parse_sshd_config_file(match, seen, depth))
+    return values
+
+
+def _resolve_path(path: Path) -> Optional[Path]:
+    try:
+        return path.resolve()
+    except OSError:
+        return None
 
 
 def parse_loadavg(path: Path) -> LoadAverage:

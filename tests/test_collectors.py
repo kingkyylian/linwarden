@@ -1,8 +1,7 @@
-from pathlib import Path
 import unittest
+from pathlib import Path
 
 from linwarden.collectors import collect_host_snapshot
-
 
 FIXTURE_ROOT = Path(__file__).parent / "fixtures" / "linux-root"
 
@@ -25,6 +24,8 @@ class CollectorTests(unittest.TestCase):
         self.assertEqual(snapshot.sysctls["net.ipv6.conf.all.forwarding"], "1")
         self.assertEqual(snapshot.sysctls["fs.protected_hardlinks"], "0")
         self.assertEqual(snapshot.sshd_options["permitrootlogin"], "yes")
+        self.assertEqual(snapshot.sshd_options["x11forwarding"], "yes")
+        self.assertEqual(snapshot.sshd_options["permitemptypasswords"], "yes")
         self.assertEqual(snapshot.mounts[0].mount_point, "/")
 
 

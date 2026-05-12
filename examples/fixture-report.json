@@ -25,6 +25,18 @@
       "title": "SSH password authentication is enabled"
     },
     {
+      "category": "ssh",
+      "evidence": "PermitEmptyPasswords yes",
+      "impact": "Accounts with empty passwords can authenticate over SSH without a credential secret.",
+      "references": [
+        "man:sshd_config(5)"
+      ],
+      "remediation": "Set PermitEmptyPasswords no in sshd_config and reload sshd.",
+      "rule_id": "LNX-SSH-003",
+      "severity": "high",
+      "title": "SSH permits empty passwords"
+    },
+    {
       "category": "kernel",
       "evidence": "kernel.randomize_va_space=0",
       "impact": "Memory corruption exploits become easier when process address layouts are predictable.",
@@ -208,12 +220,12 @@
   "summary": {
     "by_severity": {
       "critical": 0,
-      "high": 5,
+      "high": 6,
       "low": 2,
       "medium": 4
     },
     "score": 0,
-    "total": 11
+    "total": 12
   },
   "suppressed_findings": []
 }

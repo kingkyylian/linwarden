@@ -11,9 +11,23 @@
 ```bash
 make test
 make compile
+make lint
+make typecheck
 make smoke
 make smoke-sarif
 make check
+```
+
+Install development tools with:
+
+```bash
+python -m pip install -e ".[dev]"
+```
+
+To run checks with a project virtualenv:
+
+```bash
+make check PYTHON=.venv/bin/python
 ```
 
 `make compile` writes bytecode under the project-local `.pycache` directory so local sandboxed environments do not need access to user-level Python cache directories.

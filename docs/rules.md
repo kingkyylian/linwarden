@@ -2,7 +2,7 @@
 
 Rules are designed to be explainable. Each finding includes evidence, impact, remediation, and references.
 
-Linwarden uses static, rootless evidence. For SSH, this means the parser reads `sshd_config` directly and does not execute `sshd -T`; distribution-specific includes and `Match` blocks may require manual confirmation.
+Linwarden uses static, rootless evidence. For SSH, this means the parser reads `sshd_config` and simple `Include` directives directly, but does not execute `sshd -T`; distribution-specific `Match` behavior may require manual confirmation.
 
 ## Severity Guide
 
@@ -28,6 +28,13 @@ Linwarden uses static, rootless evidence. For SSH, this means the parser reads `
 - Evidence: `PasswordAuthentication yes`
 - Impact: Password-based SSH increases exposure to weak passwords and credential stuffing.
 - Remediation: Prefer key-based SSH and set `PasswordAuthentication no` after validating access.
+
+### LNX-SSH-003: SSH permits empty passwords
+
+- Severity: high
+- Evidence: `PermitEmptyPasswords yes`
+- Impact: Accounts with empty passwords can authenticate over SSH without a credential secret.
+- Remediation: Set `PermitEmptyPasswords no` and reload `sshd`.
 
 ## Kernel Rules
 

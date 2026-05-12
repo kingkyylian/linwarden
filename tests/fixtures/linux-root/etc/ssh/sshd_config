@@ -1,4 +1,5 @@
 Port 22
+Include sshd_config.d/*.conf
 PermitRootLogin yes
 PasswordAuthentication yes
 ChallengeResponseAuthentication no

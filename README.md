@@ -99,6 +99,7 @@ Suppressed findings remain visible in JSON and Markdown reports. SARIF output in
 | --- | --- | --- | --- |
 | `LNX-SSH-001` | high | SSH | `PermitRootLogin yes` is enabled. |
 | `LNX-SSH-002` | medium | SSH | `PasswordAuthentication yes` is enabled. |
+| `LNX-SSH-003` | high | SSH | `PermitEmptyPasswords yes` is enabled. |
 | `LNX-KRN-001` | high | Kernel | `kernel.randomize_va_space=0` disables ASLR. |
 | `LNX-KRN-002` | high | Kernel | `vm.mmap_min_addr` is below `65536`. |
 | `LNX-KRN-003` | medium | Kernel | `kernel.kptr_restrict=0` exposes kernel pointers. |
@@ -149,10 +150,14 @@ docs/
 ```bash
 make test
 make compile
+make lint
+make typecheck
 make smoke
 make smoke-sarif
 make check
 ```
+
+Use `make check PYTHON=.venv/bin/python` when running through a project virtualenv.
 
 No network services or privileged permissions are required for the test suite.
 

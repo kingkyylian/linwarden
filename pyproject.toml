@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "linwarden"
-version = "0.2.0"
+version = "0.3.0"
 description = "Rootless Linux host inventory and hardening audit CLI."
 readme = "README.md"
 requires-python = ">=3.9"
@@ -38,6 +38,12 @@ classifiers = [
 ]
 dependencies = []
 
+[project.optional-dependencies]
+dev = [
+  "mypy>=1.13,<2",
+  "ruff>=0.8"
+]
+
 [project.urls]
 Homepage = "https://github.com/kingkyylian/linwarden"
 Documentation = "https://github.com/kingkyylian/linwarden/tree/main/docs"
@@ -48,3 +54,21 @@ linwarden = "linwarden.cli:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]
+
+[tool.ruff]
+line-length = 120
+target-version = "py39"
+
+[tool.ruff.lint]
+select = ["E", "F", "I"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["linwarden"]
+
+[tool.mypy]
+python_version = "3.9"
+packages = ["linwarden"]
+mypy_path = "src"
+warn_unused_configs = true
+warn_return_any = true
+no_implicit_optional = true

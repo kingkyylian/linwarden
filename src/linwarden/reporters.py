@@ -1,12 +1,11 @@
 from __future__ import annotations
 
-from dataclasses import asdict
 import json
+from dataclasses import asdict
 from typing import List, Tuple, Union
 
 from .models import Finding, HostSnapshot, SuppressedFinding
 from .rules import summarize_findings
-
 
 FindingCollection = Union[List[Finding], Tuple[Finding, ...]]
 
@@ -74,15 +73,15 @@ def render_markdown(
                 "| --- | --- | --- | --- |",
             ]
         )
-        for finding in suppressed_findings:
+        for suppressed in suppressed_findings:
             lines.append(
                 "| "
                 + " | ".join(
                     [
-                        _cell(finding.source),
-                        _cell(finding.rule_id),
-                        _cell(finding.title),
-                        _cell(finding.reason),
+                        _cell(suppressed.source),
+                        _cell(suppressed.rule_id),
+                        _cell(suppressed.title),
+                        _cell(suppressed.reason),
                     ]
                 )
                 + " |"

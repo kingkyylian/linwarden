@@ -1,14 +1,13 @@
-from io import StringIO
-from pathlib import Path
 import json
 import unittest
+from io import StringIO
+from pathlib import Path
 
 from linwarden.cli import main
 from linwarden.collectors import collect_host_snapshot
 from linwarden.config import apply_config, load_config
 from linwarden.reporters import render_json, render_markdown, render_sarif
 from linwarden.rules import evaluate_snapshot
-
 
 FIXTURE_ROOT = Path(__file__).parent / "fixtures" / "linux-root"
 FIXTURE_CONFIG = Path(__file__).parent / "fixtures" / "linwarden.json"
@@ -70,7 +69,7 @@ class ReporterAndCliTests(unittest.TestCase):
 
         self.assertNotIn("LNX-SSH-002", {finding["rule_id"] for finding in payload["findings"]})
         self.assertIn("LNX-SSH-002", {finding["rule_id"] for finding in payload["suppressed_findings"]})
-        self.assertEqual(payload["summary"]["total"], 7)
+        self.assertEqual(payload["summary"]["total"], 8)
 
     def test_cli_returns_failure_code_when_threshold_is_met(self) -> None:
         out = StringIO()
@@ -92,7 +91,7 @@ class ReporterAndCliTests(unittest.TestCase):
 
         self.assertEqual(exit_code, 2)
         self.assertEqual(err.getvalue(), "")
-        self.assertEqual(json.loads(out.getvalue())["summary"]["by_severity"]["high"], 5)
+        self.assertEqual(json.loads(out.getvalue())["summary"]["by_severity"]["high"], 6)
 
     def test_cli_applies_config_and_outputs_sarif(self) -> None:
         out = StringIO()

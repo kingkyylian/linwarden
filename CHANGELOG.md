@@ -2,6 +2,15 @@
 
 All notable changes to Linwarden are documented here.
 
+## 0.3.0 - 2026-05-12
+
+- Added Ruff and mypy development checks.
+- Added SARIF upload in GitHub Actions on pushes.
+- Added static SSH `Include` parsing for fixture and offline config roots.
+- Aligned static SSH parsing with OpenSSH first-value-wins behavior.
+- Added `LNX-SSH-003` for `PermitEmptyPasswords yes`.
+- Added config validation tests for unknown profiles and missing suppression reasons.
+
 ## 0.2.0 - 2026-05-12
 
 - Added JSON config support through `--config`.

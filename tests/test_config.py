@@ -1,13 +1,13 @@
-from pathlib import Path
 import unittest
+from pathlib import Path
 
 from linwarden.collectors import collect_host_snapshot
 from linwarden.config import apply_config, load_config
 from linwarden.rules import evaluate_snapshot
 
-
 FIXTURE_ROOT = Path(__file__).parent / "fixtures" / "linux-root"
 FIXTURE_CONFIG = Path(__file__).parent / "fixtures" / "linwarden.json"
+CONFIG_FIXTURES = Path(__file__).parent / "fixtures" / "config"
 
 
 class ConfigTests(unittest.TestCase):
@@ -35,7 +35,15 @@ class ConfigTests(unittest.TestCase):
         self.assertEqual(suppressed_by_rule["LNX-NET-001"].source, "profile")
         self.assertEqual(suppressed_by_rule["LNX-NET-002"].source, "disabled_rule")
         self.assertEqual(suppressed_by_rule["LNX-SSH-002"].source, "suppression")
-        self.assertEqual(len(result.active_findings), 7)
+        self.assertEqual(len(result.active_findings), 8)
+
+    def test_rejects_unknown_profile(self) -> None:
+        with self.assertRaisesRegex(ValueError, "unknown profile"):
+            load_config(CONFIG_FIXTURES / "invalid-profile.json")
+
+    def test_rejects_suppression_without_reason(self) -> None:
+        with self.assertRaisesRegex(ValueError, "suppression reason"):
+            load_config(CONFIG_FIXTURES / "missing-reason.json")
 
 
 if __name__ == "__main__":

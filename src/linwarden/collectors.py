@@ -15,7 +15,6 @@ from .parsers import (
     read_text,
 )
 
-
 SYSCTL_PATHS = {
     "fs.protected_hardlinks": ("sys", "fs", "protected_hardlinks"),
     "fs.protected_symlinks": ("sys", "fs", "protected_symlinks"),

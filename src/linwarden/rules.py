@@ -4,7 +4,6 @@ from typing import Optional
 
 from .models import Finding, FindingSummary, HostSnapshot
 
-
 SEVERITY_ORDER = {"low": 1, "medium": 2, "high": 3, "critical": 4}
 SCORE_WEIGHTS = {"low": 3, "medium": 10, "high": 20, "critical": 35}
 
@@ -38,6 +37,21 @@ def evaluate_snapshot(snapshot: HostSnapshot) -> list[Finding]:
                 evidence=f"PasswordAuthentication {password_auth}",
                 impact="Password-based SSH increases exposure to credential stuffing and weak password attacks.",
                 remediation="Prefer key-based SSH and set PasswordAuthentication no after confirming access.",
+                references=("man:sshd_config(5)",),
+            )
+        )
+
+    permit_empty_passwords = snapshot.sshd_options.get("permitemptypasswords", "not set").lower()
+    if permit_empty_passwords == "yes":
+        findings.append(
+            Finding(
+                rule_id="LNX-SSH-003",
+                severity="high",
+                title="SSH permits empty passwords",
+                category="ssh",
+                evidence=f"PermitEmptyPasswords {permit_empty_passwords}",
+                impact="Accounts with empty passwords can authenticate over SSH without a credential secret.",
+                remediation="Set PermitEmptyPasswords no in sshd_config and reload sshd.",
                 references=("man:sshd_config(5)",),
             )
         )
@@ -96,8 +110,14 @@ def evaluate_snapshot(snapshot: HostSnapshot) -> list[Finding]:
                 title="IPv6 forwarding is enabled",
                 category="network",
                 evidence="net.ipv6.conf.all.forwarding=1",
-                impact="The host can route IPv6 traffic between interfaces, which may be unintended on non-router systems.",
-                remediation="Set net.ipv6.conf.all.forwarding=0 unless this system is intentionally acting as an IPv6 router.",
+                impact=(
+                    "The host can route IPv6 traffic between interfaces, "
+                    "which may be unintended on non-router systems."
+                ),
+                remediation=(
+                    "Set net.ipv6.conf.all.forwarding=0 unless this system is "
+                    "intentionally acting as an IPv6 router."
+                ),
                 references=("https://docs.kernel.org/networking/ip-sysctl.html",),
             )
         )
@@ -141,7 +161,10 @@ def evaluate_snapshot(snapshot: HostSnapshot) -> list[Finding]:
                 title="Hardlink protection is disabled",
                 category="filesystem",
                 evidence="fs.protected_hardlinks=0",
-                impact="Users may be able to create hardlinks to files they do not own, weakening common privilege escalation protections.",
+                impact=(
+                    "Users may be able to create hardlinks to files they do not own, "
+                    "weakening common privilege escalation protections."
+                ),
                 remediation="Set fs.protected_hardlinks=1 and persist it under /etc/sysctl.d/.",
                 references=("https://docs.kernel.org/admin-guide/sysctl/fs.html",),
             )

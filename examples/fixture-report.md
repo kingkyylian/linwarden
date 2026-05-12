@@ -4,7 +4,7 @@
 - OS: `Debian GNU/Linux 12 (bookworm)`
 - Kernel: `6.8.7-fixture`
 - Score: `0/100`
-- Findings: `11`
+- Findings: `12`
 
 ## Findings
 
@@ -12,6 +12,7 @@
 | --- | --- | --- | --- |
 | HIGH | LNX-SSH-001 | SSH root login is permitted | PermitRootLogin yes |
 | MEDIUM | LNX-SSH-002 | SSH password authentication is enabled | PasswordAuthentication yes |
+| HIGH | LNX-SSH-003 | SSH permits empty passwords | PermitEmptyPasswords yes |
 | HIGH | LNX-KRN-001 | Address space layout randomization is disabled | kernel.randomize_va_space=0 |
 | MEDIUM | LNX-NET-001 | IPv4 forwarding is enabled | net.ipv4.ip_forward=1 |
 | LOW | LNX-NET-002 | IPv4 ICMP redirects are accepted | net.ipv4.conf.all.accept_redirects=1 |
@@ -35,6 +36,12 @@ Fix: Set PermitRootLogin no in sshd_config and reload sshd.
 Impact: Password-based SSH increases exposure to credential stuffing and weak password attacks.
 
 Fix: Prefer key-based SSH and set PasswordAuthentication no after confirming access.
+
+### LNX-SSH-003: SSH permits empty passwords
+
+Impact: Accounts with empty passwords can authenticate over SSH without a credential secret.
+
+Fix: Set PermitEmptyPasswords no in sshd_config and reload sshd.
 
 ### LNX-KRN-001: Address space layout randomization is disabled
 

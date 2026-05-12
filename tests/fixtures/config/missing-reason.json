@@ -1,0 +1,7 @@
+{
+  "suppressions": [
+    {
+      "rule_id": "LNX-SSH-001"
+    }
+  ]
+}

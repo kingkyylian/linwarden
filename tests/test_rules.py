@@ -1,9 +1,8 @@
-from pathlib import Path
 import unittest
+from pathlib import Path
 
 from linwarden.collectors import collect_host_snapshot
 from linwarden.rules import evaluate_snapshot, summarize_findings
-
 
 FIXTURE_ROOT = Path(__file__).parent / "fixtures" / "linux-root"
 
@@ -22,6 +21,7 @@ class RuleTests(unittest.TestCase):
         self.assertEqual(by_rule["LNX-SSH-001"].severity, "high")
         self.assertIn("PermitRootLogin", by_rule["LNX-SSH-001"].evidence)
         self.assertIn("no", by_rule["LNX-SSH-001"].remediation)
+        self.assertEqual(by_rule["LNX-SSH-003"].severity, "high")
         self.assertEqual(by_rule["LNX-KRN-001"].severity, "high")
         self.assertEqual(by_rule["LNX-NET-001"].severity, "medium")
         self.assertEqual(by_rule["LNX-NET-002"].severity, "low")
@@ -39,8 +39,8 @@ class RuleTests(unittest.TestCase):
         )
         summary = summarize_findings(evaluate_snapshot(snapshot))
 
-        self.assertEqual(summary.total, 11)
-        self.assertEqual(summary.by_severity["high"], 5)
+        self.assertEqual(summary.total, 12)
+        self.assertEqual(summary.by_severity["high"], 6)
         self.assertEqual(summary.by_severity["medium"], 4)
         self.assertEqual(summary.by_severity["low"], 2)
         self.assertEqual(summary.score, 0)

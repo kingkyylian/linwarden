@@ -200,6 +200,50 @@ def evaluate_snapshot(snapshot: HostSnapshot) -> list[Finding]:
             )
         )
 
+    updates_available = snapshot.package_status.updates_available
+    if updates_available is not None and updates_available > 0:
+        findings.append(
+            Finding(
+                rule_id="LNX-PKG-001",
+                severity="medium",
+                title="Package updates are available",
+                category="packages",
+                evidence=f"{updates_available} package updates available via {snapshot.package_status.manager}",
+                impact="Unapplied package updates can leave the host exposed to known defects and vulnerabilities.",
+                remediation="Review and apply pending package updates through the system package manager.",
+                references=("man:apt(8)", "man:dnf(8)", "man:pacman(8)", "man:apk(8)"),
+            )
+        )
+
+    security_updates = snapshot.package_status.security_updates
+    if security_updates is not None and security_updates > 0:
+        findings.append(
+            Finding(
+                rule_id="LNX-PKG-002",
+                severity="high",
+                title="Security package updates are available",
+                category="packages",
+                evidence=f"{security_updates} security updates available via {snapshot.package_status.manager}",
+                impact="Known security fixes have not been applied to this host.",
+                remediation="Prioritize applying pending security updates and restart affected services if required.",
+                references=("man:apt(8)", "man:dnf(8)", "man:pacman(8)", "man:apk(8)"),
+            )
+        )
+
+    if snapshot.firewall_status.provider != "unknown" and snapshot.firewall_status.enabled is False:
+        findings.append(
+            Finding(
+                rule_id="LNX-FW-001",
+                severity="medium",
+                title="Host firewall is disabled",
+                category="firewall",
+                evidence=f"{snapshot.firewall_status.provider} firewall disabled",
+                impact="The host may expose services directly without local packet filtering.",
+                remediation="Enable the host firewall or document why perimeter controls are sufficient.",
+                references=("man:ufw(8)", "man:firewalld(1)", "man:nft(8)"),
+            )
+        )
+
     return findings
 
 

@@ -2,6 +2,7 @@ import json
 import unittest
 from io import StringIO
 from pathlib import Path
+from tempfile import TemporaryDirectory
 
 from linwarden.cli import main
 from linwarden.collectors import collect_host_snapshot
@@ -73,7 +74,7 @@ class ReporterAndCliTests(unittest.TestCase):
 
         self.assertNotIn("LNX-SSH-002", {finding["rule_id"] for finding in payload["findings"]})
         self.assertIn("LNX-SSH-002", {finding["rule_id"] for finding in payload["suppressed_findings"]})
-        self.assertEqual(payload["summary"]["total"], 8)
+        self.assertEqual(payload["summary"]["total"], 11)
 
     def test_cli_returns_failure_code_when_threshold_is_met(self) -> None:
         out = StringIO()
@@ -95,7 +96,47 @@ class ReporterAndCliTests(unittest.TestCase):
 
         self.assertEqual(exit_code, 2)
         self.assertEqual(err.getvalue(), "")
-        self.assertEqual(json.loads(out.getvalue())["summary"]["by_severity"]["high"], 6)
+        self.assertEqual(json.loads(out.getvalue())["summary"]["by_severity"]["high"], 7)
+
+    def test_cli_can_use_effective_sshd_config(self) -> None:
+        with TemporaryDirectory() as temp_dir:
+            fake_sshd = Path(temp_dir) / "sshd"
+            fake_sshd.write_text(
+                "\n".join(
+                    [
+                        "#!/bin/sh",
+                        "printf '%s\\n' 'permitrootlogin no' 'passwordauthentication no' 'permitemptypasswords no'",
+                    ]
+                ),
+                encoding="utf-8",
+            )
+            fake_sshd.chmod(0o755)
+            out = StringIO()
+            err = StringIO()
+
+            exit_code = main(
+                [
+                    "scan",
+                    "--root",
+                    str(FIXTURE_ROOT),
+                    "--sshd-mode",
+                    "effective",
+                    "--sshd-binary",
+                    str(fake_sshd),
+                    "--format",
+                    "json",
+                    "--fail-on",
+                    "critical",
+                ],
+                stdout=out,
+                stderr=err,
+            )
+
+        payload = json.loads(out.getvalue())
+        self.assertEqual(exit_code, 0)
+        self.assertEqual(err.getvalue(), "")
+        self.assertEqual(payload["host"]["sshd_source"], "effective")
+        self.assertNotIn("LNX-SSH-001", {finding["rule_id"] for finding in payload["findings"]})
 
     def test_cli_applies_config_and_outputs_sarif(self) -> None:
         out = StringIO()

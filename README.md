@@ -11,6 +11,8 @@ The project goal is practical: give maintainers a small, auditable tool that exp
 - Markdown output suitable for GitHub job summaries and issue attachments.
 - SARIF output suitable for GitHub-native security ingestion.
 - JSON config support for profiles, disabled rules, and justified suppressions.
+- Optional effective OpenSSH config collection through `sshd -T`.
+- Package update and host firewall posture signals where rootless files expose them.
 - Severity scoring with `critical`, `high`, `medium`, and `low` buckets.
 - CI-friendly exit thresholds through `--fail-on`.
 - Fixture-root scanning for tests, containers, forensic copies, and offline analysis.
@@ -43,6 +45,7 @@ Exit code `2` means at least one finding matched the selected threshold.
 ```text
 linwarden scan [--root PATH] [--proc-root PATH] [--etc-root PATH]
                [--config PATH] [--format markdown|json|sarif]
+               [--sshd-mode static|effective|auto] [--sshd-binary PATH]
                [--output PATH]
                [--fail-on off|low|medium|high|critical]
 ```
@@ -53,6 +56,7 @@ Common examples:
 linwarden scan --format markdown --output linwarden-report.md
 linwarden scan --format json --fail-on high
 linwarden scan --config linwarden.json --format sarif --output linwarden.sarif
+linwarden scan --sshd-mode effective --format json
 linwarden scan --root /mnt/server-image --format json
 linwarden scan --proc-root /host/proc --etc-root /host/etc --format markdown
 ```
@@ -109,6 +113,9 @@ Suppressed findings remain visible in JSON and Markdown reports. SARIF output in
 | `LNX-NET-002` | low | Network | `net.ipv4.conf.all.accept_redirects=1` is enabled. |
 | `LNX-NET-003` | medium | Network | `net.ipv6.conf.all.forwarding=1` is enabled. |
 | `LNX-NET-004` | low | Network | `net.ipv6.conf.all.accept_redirects=1` is enabled. |
+| `LNX-PKG-001` | medium | Packages | Package updates are available. |
+| `LNX-PKG-002` | high | Packages | Security package updates are available. |
+| `LNX-FW-001` | medium | Firewall | A known host firewall is disabled. |
 
 Rule details live in [docs/rules.md](docs/rules.md).
 
@@ -167,8 +174,8 @@ Linwarden is read-only by default. It does not modify host state, load kernel mo
 
 ## Known Limits
 
-- SSH parsing reads the visible `sshd_config` file and does not execute `sshd -T`.
-- `Include` and `Match` behavior may differ from the static SSH evidence shown in a report.
+- Static SSH mode reads `sshd_config` plus simple `Include` directives; `Match` behavior may differ from effective OpenSSH config.
+- Effective SSH mode executes `sshd -T`; use it only when scanning the live host intentionally.
 - Missing files are treated as absent data so scans can run in containers and fixture roots.
 - Linwarden is a hardening triage tool, not a full CIS or DISA STIG compliance scanner.
 
@@ -178,8 +185,8 @@ Please report vulnerabilities using [SECURITY.md](SECURITY.md).
 
 - Optional systemd unit inventory.
 - Additional bridge networking and firewall rules.
-- Package manager freshness adapters for Debian, Ubuntu, Fedora, and Arch.
-- Release automation for tags and GitHub Releases.
+- Package manager freshness adapters beyond update-notifier status files.
+- Signed release artifacts.
 
 ## License
 

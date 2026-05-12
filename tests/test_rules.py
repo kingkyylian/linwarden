@@ -30,6 +30,9 @@ class RuleTests(unittest.TestCase):
         self.assertEqual(by_rule["LNX-FS-001"].severity, "high")
         self.assertEqual(by_rule["LNX-FS-002"].severity, "high")
         self.assertEqual(by_rule["LNX-KRN-003"].severity, "medium")
+        self.assertEqual(by_rule["LNX-PKG-001"].severity, "medium")
+        self.assertEqual(by_rule["LNX-PKG-002"].severity, "high")
+        self.assertEqual(by_rule["LNX-FW-001"].severity, "medium")
 
     def test_summarizes_findings_into_score_and_counts(self) -> None:
         snapshot = collect_host_snapshot(
@@ -39,9 +42,9 @@ class RuleTests(unittest.TestCase):
         )
         summary = summarize_findings(evaluate_snapshot(snapshot))
 
-        self.assertEqual(summary.total, 12)
-        self.assertEqual(summary.by_severity["high"], 6)
-        self.assertEqual(summary.by_severity["medium"], 4)
+        self.assertEqual(summary.total, 15)
+        self.assertEqual(summary.by_severity["high"], 7)
+        self.assertEqual(summary.by_severity["medium"], 6)
         self.assertEqual(summary.by_severity["low"], 2)
         self.assertEqual(summary.score, 0)
 

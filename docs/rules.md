@@ -2,7 +2,7 @@
 
 Rules are designed to be explainable. Each finding includes evidence, impact, remediation, and references.
 
-Linwarden uses static, rootless evidence. For SSH, this means the parser reads `sshd_config` and simple `Include` directives directly, but does not execute `sshd -T`; distribution-specific `Match` behavior may require manual confirmation.
+Linwarden uses static, rootless evidence by default. For SSH, static mode reads `sshd_config` and simple `Include` directives directly. Effective mode can execute `sshd -T` when the operator explicitly requests it.
 
 ## Severity Guide
 
@@ -104,3 +104,28 @@ Linwarden uses static, rootless evidence. For SSH, this means the parser reads `
 - Evidence: `net.ipv6.conf.all.accept_redirects=1`
 - Impact: Malicious redirects can influence IPv6 routing decisions on hostile networks.
 - Remediation: Set `net.ipv6.conf.all.accept_redirects=0` unless redirects are required.
+
+## Package Rules
+
+### LNX-PKG-001: Package updates are available
+
+- Severity: medium
+- Evidence: update count from the local package update status source.
+- Impact: Unapplied package updates can leave the host exposed to known defects and vulnerabilities.
+- Remediation: Review and apply pending package updates through the system package manager.
+
+### LNX-PKG-002: Security package updates are available
+
+- Severity: high
+- Evidence: security update count from the local package update status source.
+- Impact: Known security fixes have not been applied to this host.
+- Remediation: Prioritize applying pending security updates and restart affected services if required.
+
+## Firewall Rules
+
+### LNX-FW-001: Host firewall is disabled
+
+- Severity: medium
+- Evidence: known host firewall provider reports disabled state.
+- Impact: The host may expose services directly without local packet filtering.
+- Remediation: Enable the host firewall or document why perimeter controls are sufficient.

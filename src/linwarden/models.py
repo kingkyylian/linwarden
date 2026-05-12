@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+from typing import Optional
 
 
 @dataclass(frozen=True)
@@ -27,6 +28,21 @@ class Mount:
 
 
 @dataclass(frozen=True)
+class PackageStatus:
+    manager: str
+    updates_available: Optional[int]
+    security_updates: Optional[int]
+    source: str
+
+
+@dataclass(frozen=True)
+class FirewallStatus:
+    provider: str
+    enabled: Optional[bool]
+    source: str
+
+
+@dataclass(frozen=True)
 class HostSnapshot:
     hostname: str
     os_release: dict[str, str]
@@ -37,6 +53,9 @@ class HostSnapshot:
     mounts: tuple[Mount, ...]
     sysctls: dict[str, str]
     sshd_options: dict[str, str]
+    sshd_source: str
+    package_status: PackageStatus
+    firewall_status: FirewallStatus
 
 
 @dataclass(frozen=True)

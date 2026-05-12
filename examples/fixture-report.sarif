@@ -178,6 +178,72 @@
             "severity": "medium"
           },
           "ruleId": "LNX-KRN-003"
+        },
+        {
+          "level": "warning",
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "docs/rules.md"
+                }
+              }
+            }
+          ],
+          "message": {
+            "text": "Package updates are available: 12 package updates available via apt"
+          },
+          "properties": {
+            "category": "packages",
+            "host": "fixture-box",
+            "remediation": "Review and apply pending package updates through the system package manager.",
+            "severity": "medium"
+          },
+          "ruleId": "LNX-PKG-001"
+        },
+        {
+          "level": "error",
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "docs/rules.md"
+                }
+              }
+            }
+          ],
+          "message": {
+            "text": "Security package updates are available: 5 security updates available via apt"
+          },
+          "properties": {
+            "category": "packages",
+            "host": "fixture-box",
+            "remediation": "Prioritize applying pending security updates and restart affected services if required.",
+            "severity": "high"
+          },
+          "ruleId": "LNX-PKG-002"
+        },
+        {
+          "level": "warning",
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "docs/rules.md"
+                }
+              }
+            }
+          ],
+          "message": {
+            "text": "Host firewall is disabled: ufw firewall disabled"
+          },
+          "properties": {
+            "category": "firewall",
+            "host": "fixture-box",
+            "remediation": "Enable the host firewall or document why perimeter controls are sufficient.",
+            "severity": "medium"
+          },
+          "ruleId": "LNX-FW-001"
         }
       ],
       "tool": {
@@ -343,6 +409,74 @@
               },
               "shortDescription": {
                 "text": "Kernel pointer exposure is unrestricted"
+              }
+            },
+            {
+              "fullDescription": {
+                "text": "Unapplied package updates can leave the host exposed to known defects and vulnerabilities."
+              },
+              "help": {
+                "text": "Review and apply pending package updates through the system package manager."
+              },
+              "id": "LNX-PKG-001",
+              "name": "Package updates are available",
+              "properties": {
+                "category": "packages",
+                "references": [
+                  "man:apt(8)",
+                  "man:dnf(8)",
+                  "man:pacman(8)",
+                  "man:apk(8)"
+                ],
+                "severity": "medium"
+              },
+              "shortDescription": {
+                "text": "Package updates are available"
+              }
+            },
+            {
+              "fullDescription": {
+                "text": "Known security fixes have not been applied to this host."
+              },
+              "help": {
+                "text": "Prioritize applying pending security updates and restart affected services if required."
+              },
+              "id": "LNX-PKG-002",
+              "name": "Security package updates are available",
+              "properties": {
+                "category": "packages",
+                "references": [
+                  "man:apt(8)",
+                  "man:dnf(8)",
+                  "man:pacman(8)",
+                  "man:apk(8)"
+                ],
+                "severity": "high"
+              },
+              "shortDescription": {
+                "text": "Security package updates are available"
+              }
+            },
+            {
+              "fullDescription": {
+                "text": "The host may expose services directly without local packet filtering."
+              },
+              "help": {
+                "text": "Enable the host firewall or document why perimeter controls are sufficient."
+              },
+              "id": "LNX-FW-001",
+              "name": "Host firewall is disabled",
+              "properties": {
+                "category": "firewall",
+                "references": [
+                  "man:ufw(8)",
+                  "man:firewalld(1)",
+                  "man:nft(8)"
+                ],
+                "severity": "medium"
+              },
+              "shortDescription": {
+                "text": "Host firewall is disabled"
               }
             }
           ]

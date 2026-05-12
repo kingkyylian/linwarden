@@ -15,6 +15,7 @@ make lint
 make typecheck
 make smoke
 make smoke-sarif
+make package
 make check
 ```
 
@@ -44,4 +45,9 @@ This keeps tests stable on macOS, Linux, and CI.
 2. Confirm `pyproject.toml` version matches `src/linwarden/__init__.py`.
 3. Run `make test`.
 4. Run `make compile`.
-5. Tag the release after CI passes.
+5. Run `make package PYTHON=.venv/bin/python`.
+6. Tag the release after CI passes.
+
+## Release Workflow
+
+Pushing a tag like `v0.4.0` runs tests, compile, Ruff, and mypy, builds source and wheel artifacts, then creates a GitHub Release with generated notes.

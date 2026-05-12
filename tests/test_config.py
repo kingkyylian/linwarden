@@ -35,7 +35,7 @@ class ConfigTests(unittest.TestCase):
         self.assertEqual(suppressed_by_rule["LNX-NET-001"].source, "profile")
         self.assertEqual(suppressed_by_rule["LNX-NET-002"].source, "disabled_rule")
         self.assertEqual(suppressed_by_rule["LNX-SSH-002"].source, "suppression")
-        self.assertEqual(len(result.active_findings), 8)
+        self.assertEqual(len(result.active_findings), 11)
 
     def test_rejects_unknown_profile(self) -> None:
         with self.assertRaisesRegex(ValueError, "unknown profile"):

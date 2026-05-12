@@ -143,9 +143,58 @@
       "rule_id": "LNX-KRN-003",
       "severity": "medium",
       "title": "Kernel pointer exposure is unrestricted"
+    },
+    {
+      "category": "packages",
+      "evidence": "12 package updates available via apt",
+      "impact": "Unapplied package updates can leave the host exposed to known defects and vulnerabilities.",
+      "references": [
+        "man:apt(8)",
+        "man:dnf(8)",
+        "man:pacman(8)",
+        "man:apk(8)"
+      ],
+      "remediation": "Review and apply pending package updates through the system package manager.",
+      "rule_id": "LNX-PKG-001",
+      "severity": "medium",
+      "title": "Package updates are available"
+    },
+    {
+      "category": "packages",
+      "evidence": "5 security updates available via apt",
+      "impact": "Known security fixes have not been applied to this host.",
+      "references": [
+        "man:apt(8)",
+        "man:dnf(8)",
+        "man:pacman(8)",
+        "man:apk(8)"
+      ],
+      "remediation": "Prioritize applying pending security updates and restart affected services if required.",
+      "rule_id": "LNX-PKG-002",
+      "severity": "high",
+      "title": "Security package updates are available"
+    },
+    {
+      "category": "firewall",
+      "evidence": "ufw firewall disabled",
+      "impact": "The host may expose services directly without local packet filtering.",
+      "references": [
+        "man:ufw(8)",
+        "man:firewalld(1)",
+        "man:nft(8)"
+      ],
+      "remediation": "Enable the host firewall or document why perimeter controls are sufficient.",
+      "rule_id": "LNX-FW-001",
+      "severity": "medium",
+      "title": "Host firewall is disabled"
     }
   ],
   "host": {
+    "firewall_status": {
+      "enabled": false,
+      "provider": "ufw",
+      "source": "tests/fixtures/linux-root/etc/ufw/ufw.conf"
+    },
     "hostname": "fixture-box",
     "kernel_release": "6.8.7-fixture",
     "load_average": {
@@ -203,6 +252,13 @@
       "VERSION_CODENAME": "bookworm",
       "VERSION_ID": "12"
     },
+    "package_status": {
+      "manager": "apt",
+      "security_updates": 5,
+      "source": "tests/fixtures/linux-root/var/lib/update-notifier/updates-available",
+      "updates_available": 12
+    },
+    "sshd_source": "static",
     "sysctls": {
       "fs.protected_hardlinks": "0",
       "fs.protected_symlinks": "0",
@@ -216,16 +272,16 @@
     },
     "uptime_seconds": 12345.67
   },
-  "schema_version": "1.1",
+  "schema_version": "1.2",
   "summary": {
     "by_severity": {
       "critical": 0,
-      "high": 6,
+      "high": 7,
       "low": 2,
-      "medium": 4
+      "medium": 6
     },
     "score": 0,
-    "total": 12
+    "total": 15
   },
   "suppressed_findings": []
 }

@@ -42,6 +42,8 @@ def _build_parser() -> argparse.ArgumentParser:
     scan.add_argument("--proc-root", type=Path, help="override procfs root")
     scan.add_argument("--etc-root", type=Path, help="override /etc root")
     scan.add_argument("--config", type=Path, help="JSON config file with profile and suppressions")
+    scan.add_argument("--sshd-mode", choices=("static", "effective", "auto"), default="static")
+    scan.add_argument("--sshd-binary", default="sshd", help="sshd binary to use with effective or auto mode")
     scan.add_argument("--format", choices=("json", "markdown", "sarif"), default="markdown")
     scan.add_argument("--output", type=Path, help="write the report to a file instead of stdout")
     scan.add_argument(
@@ -60,11 +62,17 @@ def _scan(args: argparse.Namespace, stdout: TextIO, stderr: TextIO) -> int:
         stderr.write(f"linwarden: {exc}\n")
         return 1
 
-    snapshot = collect_host_snapshot(
-        root=args.root,
-        proc_root=args.proc_root or args.root / "proc",
-        etc_root=args.etc_root or args.root / "etc",
-    )
+    try:
+        snapshot = collect_host_snapshot(
+            root=args.root,
+            proc_root=args.proc_root or args.root / "proc",
+            etc_root=args.etc_root or args.root / "etc",
+            sshd_mode=args.sshd_mode,
+            sshd_binary=args.sshd_binary,
+        )
+    except (OSError, RuntimeError, ValueError) as exc:
+        stderr.write(f"linwarden: {exc}\n")
+        return 1
     result = apply_config(evaluate_snapshot(snapshot), config)
 
     if args.format == "json":

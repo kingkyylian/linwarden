@@ -37,6 +37,12 @@ The collector reads files that are normally world-readable on Linux hosts:
 - `/proc/mounts`
 - `/proc/uptime`
 - selected `/proc/sys/...` sysctl values
+- `/var/lib/update-notifier/updates-available` when present
+- `/etc/ufw/ufw.conf` when present
+
+SSH collection defaults to static file parsing. When `--sshd-mode effective` is selected, Linwarden executes `sshd -T -f <config>` and records `sshd_source` as `effective`.
+
+Package manager labels are inferred from `/etc/os-release` `ID` and `ID_LIKE` values, then enriched with rootless update counts when a supported status file is present.
 
 Missing files are treated as absent data, not fatal errors. This keeps the CLI usable in containers, rescue mounts, and partial forensic copies.
 

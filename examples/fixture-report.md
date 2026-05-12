@@ -4,7 +4,7 @@
 - OS: `Debian GNU/Linux 12 (bookworm)`
 - Kernel: `6.8.7-fixture`
 - Score: `0/100`
-- Findings: `12`
+- Findings: `15`
 
 ## Findings
 
@@ -22,6 +22,9 @@
 | HIGH | LNX-FS-001 | Hardlink protection is disabled | fs.protected_hardlinks=0 |
 | HIGH | LNX-FS-002 | Symlink protection is disabled | fs.protected_symlinks=0 |
 | MEDIUM | LNX-KRN-003 | Kernel pointer exposure is unrestricted | kernel.kptr_restrict=0 |
+| MEDIUM | LNX-PKG-001 | Package updates are available | 12 package updates available via apt |
+| HIGH | LNX-PKG-002 | Security package updates are available | 5 security updates available via apt |
+| MEDIUM | LNX-FW-001 | Host firewall is disabled | ufw firewall disabled |
 
 ## Remediation
 
@@ -96,3 +99,21 @@ Fix: Set fs.protected_symlinks=1 and persist it under /etc/sysctl.d/.
 Impact: Kernel pointer addresses can help attackers bypass kernel exploitation mitigations.
 
 Fix: Set kernel.kptr_restrict=1 or 2 and persist it under /etc/sysctl.d/.
+
+### LNX-PKG-001: Package updates are available
+
+Impact: Unapplied package updates can leave the host exposed to known defects and vulnerabilities.
+
+Fix: Review and apply pending package updates through the system package manager.
+
+### LNX-PKG-002: Security package updates are available
+
+Impact: Known security fixes have not been applied to this host.
+
+Fix: Prioritize applying pending security updates and restart affected services if required.
+
+### LNX-FW-001: Host firewall is disabled
+
+Impact: The host may expose services directly without local packet filtering.
+
+Fix: Enable the host firewall or document why perimeter controls are sufficient.

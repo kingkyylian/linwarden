@@ -1,4 +1,4 @@
-.PHONY: test compile lint typecheck smoke smoke-sarif check
+.PHONY: test compile lint typecheck smoke smoke-sarif package check
 
 PYTHON ?= python3
 
@@ -19,5 +19,8 @@ smoke:
 
 smoke-sarif:
 	PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=src $(PYTHON) -m linwarden scan --root tests/fixtures/linux-root --config tests/fixtures/linwarden.json --format sarif --fail-on critical
+
+package:
+	$(PYTHON) -m build
 
 check: test compile lint typecheck smoke smoke-sarif

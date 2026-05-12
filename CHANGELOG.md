@@ -2,6 +2,17 @@
 
 All notable changes to Linwarden are documented here.
 
+## 0.4.0 - 2026-05-12
+
+- Added explicit `--sshd-mode effective` and `--sshd-mode auto` support using `sshd -T`.
+- Added `--sshd-binary` for testable and non-standard OpenSSH installations.
+- Added package update signal collection from `update-notifier` status files.
+- Added host firewall signal collection for UFW.
+- Added `LNX-PKG-001`, `LNX-PKG-002`, and `LNX-FW-001`.
+- Added minimal distro fixture coverage for Debian, Fedora, Arch, and Alpine roots.
+- Added tag-based GitHub Release artifact workflow.
+- Expanded JSON host metadata with SSH source, package status, and firewall status.
+
 ## 0.3.0 - 2026-05-12
 
 - Added Ruff and mypy development checks.

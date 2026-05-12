@@ -1,5 +1,6 @@
 import unittest
 from pathlib import Path
+from tempfile import TemporaryDirectory
 
 from linwarden.collectors import collect_host_snapshot
 
@@ -26,7 +27,39 @@ class CollectorTests(unittest.TestCase):
         self.assertEqual(snapshot.sshd_options["permitrootlogin"], "yes")
         self.assertEqual(snapshot.sshd_options["x11forwarding"], "yes")
         self.assertEqual(snapshot.sshd_options["permitemptypasswords"], "yes")
+        self.assertEqual(snapshot.sshd_source, "static")
+        self.assertEqual(snapshot.package_status.manager, "apt")
+        self.assertEqual(snapshot.package_status.updates_available, 12)
+        self.assertEqual(snapshot.package_status.security_updates, 5)
+        self.assertEqual(snapshot.firewall_status.provider, "ufw")
+        self.assertEqual(snapshot.firewall_status.enabled, False)
         self.assertEqual(snapshot.mounts[0].mount_point, "/")
+
+    def test_can_collect_effective_sshd_config_with_explicit_binary(self) -> None:
+        with TemporaryDirectory() as temp_dir:
+            fake_sshd = Path(temp_dir) / "sshd"
+            fake_sshd.write_text(
+                "\n".join(
+                    [
+                        "#!/bin/sh",
+                        "printf '%s\\n' 'permitrootlogin no' 'passwordauthentication no' 'permitemptypasswords no'",
+                    ]
+                ),
+                encoding="utf-8",
+            )
+            fake_sshd.chmod(0o755)
+
+            snapshot = collect_host_snapshot(
+                root=FIXTURE_ROOT,
+                proc_root=FIXTURE_ROOT / "proc",
+                etc_root=FIXTURE_ROOT / "etc",
+                sshd_mode="effective",
+                sshd_binary=fake_sshd,
+            )
+
+        self.assertEqual(snapshot.sshd_source, "effective")
+        self.assertEqual(snapshot.sshd_options["permitrootlogin"], "no")
+        self.assertEqual(snapshot.sshd_options["passwordauthentication"], "no")
 
 
 if __name__ == "__main__":

@@ -136,3 +136,5 @@ Linwarden uses static, rootless evidence by default. For SSH, static mode reads 
 - Evidence: known host firewall provider reports disabled state.
 - Impact: The host may expose services directly without local packet filtering.
 - Remediation: Enable the host firewall or document why perimeter controls are sufficient.
+
+Linwarden currently reads UFW config state directly and infers firewalld or nftables enablement from systemd enablement markers when present. A provider config file without a service marker is reported as unknown enabled state, not as disabled.

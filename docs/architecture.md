@@ -40,8 +40,12 @@ The collector reads files that are normally world-readable on Linux hosts:
 - `/var/lib/update-notifier/updates-available` when present
 - package manager metadata markers such as APT update stamps, DNF cache metadata, Pacman sync databases, and APK index caches
 - `/etc/ufw/ufw.conf` when present
+- `/etc/firewalld/firewalld.conf` and firewalld systemd enablement markers when present
+- `/etc/nftables.conf` and nftables systemd enablement markers when present
 
 SSH collection defaults to static file parsing. When `--sshd-mode effective` is selected, Linwarden executes `sshd -T -f <config>` and records `sshd_source` as `effective`.
+
+When `--sshd-match KEY=VALUE` entries are provided, Linwarden passes them to `sshd -T` through OpenSSH `-C` so `Match` blocks can be evaluated for a specific connection context.
 
 Package manager labels are inferred from `/etc/os-release` `ID` and `ID_LIKE` values, then enriched with rootless update counts when a supported status file is present.
 

@@ -5,7 +5,7 @@ import socket
 import subprocess
 import time
 from pathlib import Path
-from typing import Optional, Union
+from typing import Optional, Sequence, Union
 
 from .models import FirewallStatus, HostSnapshot, PackageStatus
 from .parsers import (
@@ -57,6 +57,7 @@ def collect_host_snapshot(
     etc_root: Optional[Union[Path, str]] = None,
     sshd_mode: str = "static",
     sshd_binary: Union[Path, str] = "sshd",
+    sshd_match_context: Sequence[str] = (),
 ) -> HostSnapshot:
     root_path = Path(root)
     proc_path = Path(proc_root) if proc_root is not None else root_path / "proc"
@@ -66,7 +67,8 @@ def collect_host_snapshot(
     os_release = parse_os_release(etc_path / "os-release")
     kernel_release = read_text(proc_path / "sys" / "kernel" / "osrelease", platform.release())
     uptime = _read_float(proc_path / "uptime")
-    sshd_options, sshd_source = _read_sshd_options(etc_path, sshd_mode, sshd_binary)
+    sshd_context = _normalize_sshd_match_context(sshd_match_context)
+    sshd_options, sshd_source = _read_sshd_options(etc_path, sshd_mode, sshd_binary, sshd_context)
 
     return HostSnapshot(
         hostname=hostname,
@@ -79,6 +81,7 @@ def collect_host_snapshot(
         sysctls=_read_sysctls(proc_path),
         sshd_options=sshd_options,
         sshd_source=sshd_source,
+        sshd_match_context=sshd_context,
         package_status=_read_package_status(root_path, os_release),
         firewall_status=_read_firewall_status(etc_path),
     )
@@ -105,15 +108,16 @@ def _read_sshd_options(
     etc_root: Path,
     sshd_mode: str,
     sshd_binary: Union[Path, str],
+    sshd_match_context: tuple[str, ...],
 ) -> tuple[dict[str, str], str]:
     sshd_config = etc_root / "ssh" / "sshd_config"
     if sshd_mode == "static":
         return parse_sshd_config(sshd_config), "static"
     if sshd_mode == "effective":
-        return _read_effective_sshd_config(sshd_config, sshd_binary), "effective"
+        return _read_effective_sshd_config(sshd_config, sshd_binary, sshd_match_context), "effective"
     if sshd_mode == "auto":
         try:
-            return _read_effective_sshd_config(sshd_config, sshd_binary), "effective"
+            return _read_effective_sshd_config(sshd_config, sshd_binary, sshd_match_context), "effective"
         except RuntimeError:
             return parse_sshd_config(sshd_config), "static"
     raise ValueError(f"unsupported sshd_mode: {sshd_mode}")
@@ -122,10 +126,14 @@ def _read_sshd_options(
 def _read_effective_sshd_config(
     sshd_config: Path,
     sshd_binary: Union[Path, str],
+    sshd_match_context: tuple[str, ...],
 ) -> dict[str, str]:
+    command = [str(sshd_binary), "-T", "-f", str(sshd_config)]
+    if sshd_match_context:
+        command.extend(["-C", ",".join(sshd_match_context)])
     try:
         completed = subprocess.run(
-            [str(sshd_binary), "-T", "-f", str(sshd_config)],
+            command,
             check=True,
             capture_output=True,
             text=True,
@@ -143,6 +151,16 @@ def _parse_key_value_lines(text: str) -> dict[str, str]:
         if len(parts) == 2:
             values[parts[0].lower()] = parts[1].strip()
     return values
+
+
+def _normalize_sshd_match_context(sshd_match_context: Sequence[str]) -> tuple[str, ...]:
+    values: list[str] = []
+    for raw_value in sshd_match_context:
+        key, separator, value = raw_value.partition("=")
+        if not separator or not key or not value or "," in key or "," in value:
+            raise ValueError("sshd match context entries must use key=value without commas")
+        values.append(f"{key.strip()}={value.strip()}")
+    return tuple(values)
 
 
 def _read_package_status(root: Path, os_release: dict[str, str]) -> PackageStatus:
@@ -241,4 +259,27 @@ def _read_firewall_status(etc_root: Path) -> FirewallStatus:
             if line.startswith("ENABLED="):
                 enabled = line.split("=", 1)[1].strip().lower() == "yes"
         return FirewallStatus(provider="ufw", enabled=enabled, source=str(ufw_config))
+
+    firewalld_marker = _systemd_wants_marker(etc_root, "firewalld.service")
+    firewalld_config = etc_root / "firewalld" / "firewalld.conf"
+    if _path_exists_or_symlink(firewalld_marker):
+        return FirewallStatus(provider="firewalld", enabled=True, source=str(firewalld_marker))
+    if firewalld_config.exists():
+        return FirewallStatus(provider="firewalld", enabled=None, source=str(firewalld_config))
+
+    nftables_marker = _systemd_wants_marker(etc_root, "nftables.service")
+    nftables_config = etc_root / "nftables.conf"
+    if _path_exists_or_symlink(nftables_marker):
+        return FirewallStatus(provider="nftables", enabled=True, source=str(nftables_marker))
+    if nftables_config.exists():
+        return FirewallStatus(provider="nftables", enabled=None, source=str(nftables_config))
+
     return FirewallStatus(provider="unknown", enabled=None, source="not found")
+
+
+def _systemd_wants_marker(etc_root: Path, service_name: str) -> Path:
+    return etc_root / "systemd" / "system" / "multi-user.target.wants" / service_name
+
+
+def _path_exists_or_symlink(path: Path) -> bool:
+    return path.exists() or path.is_symlink()

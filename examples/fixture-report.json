@@ -260,6 +260,7 @@
       "source": "tests/fixtures/linux-root/var/lib/update-notifier/updates-available",
       "updates_available": 12
     },
+    "sshd_match_context": [],
     "sshd_source": "static",
     "sysctls": {
       "fs.protected_hardlinks": "0",
@@ -274,7 +275,7 @@
     },
     "uptime_seconds": 12345.67
   },
-  "schema_version": "1.3",
+  "schema_version": "1.4",
   "summary": {
     "by_severity": {
       "critical": 0,

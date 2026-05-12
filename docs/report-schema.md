@@ -1,12 +1,12 @@
 # JSON Report Schema
 
-Linwarden JSON reports are intended for CI and fleet ingestion. The current schema version is `1.3`.
+Linwarden JSON reports are intended for CI and fleet ingestion. The current schema version is `1.4`.
 
 ## Top-Level Shape
 
 ```json
 {
-  "schema_version": "1.3",
+  "schema_version": "1.4",
   "host": {},
   "summary": {},
   "findings": [],
@@ -27,6 +27,7 @@ Linwarden JSON reports are intended for CI and fleet ingestion. The current sche
 | `mounts` | array | Parsed `/proc/mounts` entries. |
 | `sysctls` | object | Selected sysctl values used by rules. |
 | `sshd_source` | string | `static` or `effective`. |
+| `sshd_match_context` | array | OpenSSH `-C` Match context entries used for effective SSH collection. |
 | `package_status` | object | Package manager and update counts when known. |
 | `firewall_status` | object | Host firewall provider and enabled state when known. |
 

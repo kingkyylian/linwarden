@@ -44,6 +44,13 @@ def _build_parser() -> argparse.ArgumentParser:
     scan.add_argument("--config", type=Path, help="JSON config file with profile and suppressions")
     scan.add_argument("--sshd-mode", choices=("static", "effective", "auto"), default="static")
     scan.add_argument("--sshd-binary", default="sshd", help="sshd binary to use with effective or auto mode")
+    scan.add_argument(
+        "--sshd-match",
+        action="append",
+        default=[],
+        metavar="KEY=VALUE",
+        help="OpenSSH -C Match context entry for effective or auto SSH collection",
+    )
     scan.add_argument("--format", choices=("json", "markdown", "sarif"), default="markdown")
     scan.add_argument("--output", type=Path, help="write the report to a file instead of stdout")
     scan.add_argument(
@@ -69,6 +76,7 @@ def _scan(args: argparse.Namespace, stdout: TextIO, stderr: TextIO) -> int:
             etc_root=args.etc_root or args.root / "etc",
             sshd_mode=args.sshd_mode,
             sshd_binary=args.sshd_binary,
+            sshd_match_context=tuple(args.sshd_match),
         )
     except (OSError, RuntimeError, ValueError) as exc:
         stderr.write(f"linwarden: {exc}\n")

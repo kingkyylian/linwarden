@@ -11,9 +11,10 @@ The project goal is practical: give maintainers a small, auditable tool that exp
 - Markdown output suitable for GitHub job summaries and issue attachments.
 - SARIF output suitable for GitHub-native security ingestion.
 - JSON config support for profiles, disabled rules, and justified suppressions.
-- Optional effective OpenSSH config collection through `sshd -T`.
+- Optional effective OpenSSH config collection through `sshd -T`, including Match context.
 - Package update and host firewall posture signals where rootless files expose them.
 - Package metadata freshness checks for common package manager cache markers.
+- Release checksum manifests with optional detached GPG signatures.
 - Severity scoring with `critical`, `high`, `medium`, and `low` buckets.
 - CI-friendly exit thresholds through `--fail-on`.
 - Fixture-root scanning for tests, containers, forensic copies, and offline analysis.
@@ -47,6 +48,7 @@ Exit code `2` means at least one finding matched the selected threshold.
 linwarden scan [--root PATH] [--proc-root PATH] [--etc-root PATH]
                [--config PATH] [--format markdown|json|sarif]
                [--sshd-mode static|effective|auto] [--sshd-binary PATH]
+               [--sshd-match KEY=VALUE]
                [--output PATH]
                [--fail-on off|low|medium|high|critical]
 ```
@@ -58,6 +60,7 @@ linwarden scan --format markdown --output linwarden-report.md
 linwarden scan --format json --fail-on high
 linwarden scan --config linwarden.json --format sarif --output linwarden.sarif
 linwarden scan --sshd-mode effective --format json
+linwarden scan --sshd-mode effective --sshd-match user=deploy --sshd-match addr=203.0.113.10
 linwarden scan --root /mnt/server-image --format json
 linwarden scan --proc-root /host/proc --etc-root /host/etc --format markdown
 ```
@@ -150,6 +153,7 @@ tests/
 docs/
   architecture.md implementation overview
   configuration.md profile and suppression config
+  release.md      release artifact and publishing workflow
   rules.md        rule catalog
   report-schema.md JSON report contract
 ```
@@ -179,6 +183,7 @@ Linwarden is read-only by default. It does not modify host state, load kernel mo
 - Static SSH mode reads `sshd_config` plus simple `Include` directives; `Match` behavior may differ from effective OpenSSH config.
 - Effective SSH mode executes `sshd -T`; use it only when scanning the live host intentionally.
 - Package metadata age relies on local cache marker mtimes and does not call package manager commands.
+- Firewalld and nftables service state is inferred from systemd enablement markers when present; config-only detection leaves enabled state unknown.
 - Missing files are treated as absent data so scans can run in containers and fixture roots.
 - Linwarden is a hardening triage tool, not a full CIS or DISA STIG compliance scanner.
 
@@ -187,9 +192,9 @@ Please report vulnerabilities using [SECURITY.md](SECURITY.md).
 ## Roadmap
 
 - Optional systemd unit inventory.
-- Additional bridge networking and firewall rules.
+- Additional bridge networking rules.
 - Package vulnerability feed adapters beyond local package manager metadata.
-- Signed release artifacts.
+- Sigstore or GitHub artifact attestation support in addition to GPG checksum signatures.
 
 ## License
 

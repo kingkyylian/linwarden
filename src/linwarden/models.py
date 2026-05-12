@@ -56,6 +56,7 @@ class HostSnapshot:
     sysctls: dict[str, str]
     sshd_options: dict[str, str]
     sshd_source: str
+    sshd_match_context: tuple[str, ...]
     package_status: PackageStatus
     firewall_status: FirewallStatus
 

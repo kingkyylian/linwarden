@@ -3,15 +3,15 @@
 ## Near Term
 
 - Expand profile catalog with clearer server, workstation, router, and container defaults.
-- Add bridge networking and firewall checks.
+- Add bridge networking checks.
 - Add real Linux integration test fixtures from common distributions.
-- Add richer package freshness adapters for DNF, Pacman, APK, and APT history.
+- Add package vulnerability feed adapters beyond local package manager metadata.
 
 ## Later
 
 - Systemd unit exposure checks.
 - Container runtime posture checks.
-- Optional signed release artifacts.
+- Sigstore or GitHub artifact attestation support in addition to GPG checksum signatures.
 
 ## Non-Goals
 

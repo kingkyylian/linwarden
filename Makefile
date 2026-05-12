@@ -6,10 +6,10 @@ test:
 	PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=src $(PYTHON) -m unittest discover -s tests
 
 compile:
-	PYTHONPYCACHEPREFIX=.pycache $(PYTHON) -m compileall -q src tests
+	PYTHONPYCACHEPREFIX=.pycache $(PYTHON) -m compileall -q src tests scripts
 
 lint:
-	$(PYTHON) -m ruff check src tests
+	$(PYTHON) -m ruff check src tests scripts
 
 typecheck:
 	$(PYTHON) -m mypy

@@ -2,6 +2,14 @@
 
 All notable changes to Linwarden are documented here.
 
+## 0.6.0 - 2026-05-12
+
+- Added OpenSSH `sshd -T -C` Match context support through repeatable `--sshd-match KEY=VALUE`.
+- Added firewalld and nftables rootless firewall provider detection.
+- Added release checksum manifest generation and optional GPG detached checksum signatures.
+- Added opt-in PyPI trusted publishing in the tag release workflow.
+- Expanded JSON SSH metadata and bumped report schema to `1.4`.
+
 ## 0.5.0 - 2026-05-12
 
 - Added package metadata age collection for APT, DNF, Pacman, and APK cache markers.

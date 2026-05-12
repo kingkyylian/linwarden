@@ -63,6 +63,67 @@ class CollectorTests(unittest.TestCase):
         self.assertEqual(snapshot.sshd_options["permitrootlogin"], "no")
         self.assertEqual(snapshot.sshd_options["passwordauthentication"], "no")
 
+    def test_effective_sshd_config_accepts_match_context(self) -> None:
+        with TemporaryDirectory() as temp_dir:
+            temp_path = Path(temp_dir)
+            fake_sshd = temp_path / "sshd"
+            argv_log = temp_path / "argv.txt"
+            fake_sshd.write_text(
+                "\n".join(
+                    [
+                        "#!/bin/sh",
+                        f"printf '%s\\n' \"$@\" > {argv_log}",
+                        "printf '%s\\n' 'permitrootlogin no' 'passwordauthentication no'",
+                    ]
+                ),
+                encoding="utf-8",
+            )
+            fake_sshd.chmod(0o755)
+
+            snapshot = collect_host_snapshot(
+                root=FIXTURE_ROOT,
+                proc_root=FIXTURE_ROOT / "proc",
+                etc_root=FIXTURE_ROOT / "etc",
+                sshd_mode="effective",
+                sshd_binary=fake_sshd,
+                sshd_match_context=("user=admin", "addr=203.0.113.7"),
+            )
+            argv = argv_log.read_text(encoding="utf-8")
+
+        self.assertEqual(snapshot.sshd_source, "effective")
+        self.assertIn("-C\nuser=admin,addr=203.0.113.7", argv)
+
+    def test_collects_firewalld_systemd_enablement_marker(self) -> None:
+        with TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            etc = root / "etc"
+            marker = etc / "systemd" / "system" / "multi-user.target.wants" / "firewalld.service"
+            (etc / "firewalld").mkdir(parents=True)
+            marker.parent.mkdir(parents=True)
+            (etc / "os-release").write_text('ID="fedora"\n', encoding="utf-8")
+            (etc / "firewalld" / "firewalld.conf").write_text("FirewallBackend=nftables\n", encoding="utf-8")
+            marker.write_text("", encoding="utf-8")
+
+            snapshot = collect_host_snapshot(root=root, proc_root=root / "proc", etc_root=etc)
+
+        self.assertEqual(snapshot.firewall_status.provider, "firewalld")
+        self.assertEqual(snapshot.firewall_status.enabled, True)
+        self.assertEqual(snapshot.firewall_status.source, str(marker))
+
+    def test_collects_nftables_config_without_claiming_service_state(self) -> None:
+        with TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            etc = root / "etc"
+            etc.mkdir()
+            (etc / "os-release").write_text('ID="debian"\n', encoding="utf-8")
+            (etc / "nftables.conf").write_text("table inet filter {}\n", encoding="utf-8")
+
+            snapshot = collect_host_snapshot(root=root, proc_root=root / "proc", etc_root=etc)
+
+        self.assertEqual(snapshot.firewall_status.provider, "nftables")
+        self.assertIsNone(snapshot.firewall_status.enabled)
+        self.assertEqual(snapshot.firewall_status.source, str(etc / "nftables.conf"))
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -26,6 +26,18 @@ Linwarden runs:
 sshd -T -f /etc/ssh/sshd_config
 ```
 
+To evaluate OpenSSH `Match` blocks for a specific connection context, pass one or more `--sshd-match` entries:
+
+```bash
+linwarden scan --sshd-mode effective --sshd-match user=deploy --sshd-match addr=203.0.113.10
+```
+
+Linwarden joins those entries and passes them to OpenSSH as:
+
+```bash
+sshd -T -f /etc/ssh/sshd_config -C user=deploy,addr=203.0.113.10
+```
+
 Use `--sshd-binary` for non-standard paths or test wrappers:
 
 ```bash

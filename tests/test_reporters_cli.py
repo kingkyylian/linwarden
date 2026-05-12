@@ -23,8 +23,9 @@ class ReporterAndCliTests(unittest.TestCase):
         )
         payload = json.loads(render_json(snapshot, evaluate_snapshot(snapshot)))
 
-        self.assertEqual(payload["schema_version"], "1.3")
+        self.assertEqual(payload["schema_version"], "1.4")
         self.assertEqual(payload["host"]["hostname"], "fixture-box")
+        self.assertEqual(payload["host"]["sshd_match_context"], [])
         self.assertEqual(payload["host"]["package_status"]["metadata_source"], "not found")
         self.assertEqual(payload["summary"]["score"], 0)
         self.assertEqual(payload["findings"][0]["rule_id"], "LNX-SSH-001")
@@ -125,6 +126,10 @@ class ReporterAndCliTests(unittest.TestCase):
                     "effective",
                     "--sshd-binary",
                     str(fake_sshd),
+                    "--sshd-match",
+                    "user=deploy",
+                    "--sshd-match",
+                    "addr=198.51.100.4",
                     "--format",
                     "json",
                     "--fail-on",
@@ -138,6 +143,7 @@ class ReporterAndCliTests(unittest.TestCase):
         self.assertEqual(exit_code, 0)
         self.assertEqual(err.getvalue(), "")
         self.assertEqual(payload["host"]["sshd_source"], "effective")
+        self.assertEqual(payload["host"]["sshd_match_context"], ["user=deploy", "addr=198.51.100.4"])
         self.assertNotIn("LNX-SSH-001", {finding["rule_id"] for finding in payload["findings"]})
 
     def test_cli_applies_config_and_outputs_sarif(self) -> None:

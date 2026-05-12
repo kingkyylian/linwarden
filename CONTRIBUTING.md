@@ -27,10 +27,11 @@ make test
 4. Document the rule in `docs/rules.md`.
 5. Run `make test` and `make compile`.
 
+Good starter tasks are collected in [docs/contributor-ideas.md](docs/contributor-ideas.md).
+
 ## Pull Request Checklist
 
 - Tests cover the changed behavior.
 - Documentation is updated when output, rules, or CLI flags change.
-- `make test` passes.
-- `make compile` passes.
+- `make check` passes.
 - The change does not require root privileges to test.

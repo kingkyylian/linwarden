@@ -1,0 +1,40 @@
+name: Rule request
+description: Propose a new Linwarden hardening rule.
+title: "[Rule]: "
+labels: ["enhancement", "rule"]
+body:
+  - type: input
+    id: rule-area
+    attributes:
+      label: Area
+      description: SSH, kernel, network, filesystem, packages, firewall, systemd, or another area.
+      placeholder: "ssh"
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Evidence source
+      description: Which rootless file, config key, or procfs/sysfs value should Linwarden read?
+      placeholder: "/etc/ssh/sshd_config: MaxAuthTries"
+    validations:
+      required: true
+  - type: textarea
+    id: risk
+    attributes:
+      label: Risk
+      description: Why does this posture matter operationally?
+    validations:
+      required: true
+  - type: textarea
+    id: remediation
+    attributes:
+      label: Remediation
+      description: What should an operator change?
+    validations:
+      required: true
+  - type: textarea
+    id: distro-notes
+    attributes:
+      label: Distribution notes
+      description: Mention distro-specific paths, defaults, or compatibility concerns.

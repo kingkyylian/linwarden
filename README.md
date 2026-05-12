@@ -1,8 +1,26 @@
 # Linwarden
 
-Linwarden is a rootless Linux host inventory and hardening audit CLI. It reads ordinary system files such as `/etc/os-release`, `/etc/ssh/sshd_config`, and selected `/proc/sys` values, then produces Markdown, JSON, or SARIF artifacts for CI, fleet jobs, and GitHub Actions.
+[![CI](https://github.com/kingkyylian/linwarden/actions/workflows/ci.yml/badge.svg)](https://github.com/kingkyylian/linwarden/actions/workflows/ci.yml)
+[![Python](https://img.shields.io/badge/python-3.9%2B-blue.svg)](pyproject.toml)
+[![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
+
+Linwarden is a rootless Linux hardening scanner for CI and fleet triage. It reads ordinary system files such as `/etc/os-release`, `/etc/ssh/sshd_config`, and selected `/proc/sys` values, then produces Markdown, JSON, or SARIF artifacts without installing an agent, daemon, privileged helper, database, or network service.
 
 The project goal is practical: give maintainers a small, auditable tool that explains risky Linux defaults without needing an agent, daemon, privileged service, external database, or network access.
+
+## Why Linwarden
+
+Use Linwarden when you need a fast security posture signal, not a heavyweight compliance platform.
+
+| Need | Linwarden approach |
+| --- | --- |
+| CI-friendly output | JSON, Markdown, and SARIF for GitHub code scanning. |
+| Low operational risk | Read-only collection from ordinary Linux files. |
+| Offline analysis | Scan mounted roots, image extracts, containers, and fixtures. |
+| Explainable findings | Every rule includes evidence, impact, remediation, and references. |
+| Small supply chain | Zero runtime dependencies beyond Python 3.9+. |
+
+Linwarden is not a CIS or STIG replacement. It is the lightweight first pass that tells operators what deserves attention before they reach for heavier scanners.
 
 ## Features
 
@@ -41,6 +59,17 @@ PYTHONPATH=src python3 -m linwarden scan \
 ```
 
 Exit code `2` means at least one finding matched the selected threshold.
+
+## Common Workflows
+
+| Workflow | Command or doc |
+| --- | --- |
+| Local triage | `linwarden scan --format markdown` |
+| CI failure threshold | `linwarden scan --format json --fail-on high` |
+| GitHub code scanning | [docs/github-actions.md](docs/github-actions.md) |
+| Mounted image scan | `linwarden scan --root /mnt/server-image --format json` |
+| Effective SSH scan | `linwarden scan --sshd-mode effective --sshd-match user=deploy` |
+| Tool positioning | [docs/comparison.md](docs/comparison.md) |
 
 ## CLI
 
@@ -153,6 +182,11 @@ tests/
 docs/
   architecture.md implementation overview
   configuration.md profile and suppression config
+  comparison.md    positioning against adjacent Linux security tools
+  contributor-ideas.md scoped contribution backlog
+  github-actions.md CI and SARIF workflow examples
+  launch.md      copy and checklist for public announcements
+  positioning.md maintainer messaging guide
   release.md      release artifact and publishing workflow
   rules.md        rule catalog
   report-schema.md JSON report contract
@@ -195,6 +229,8 @@ Please report vulnerabilities using [SECURITY.md](SECURITY.md).
 - Additional bridge networking rules.
 - Package vulnerability feed adapters beyond local package manager metadata.
 - Sigstore or GitHub artifact attestation support in addition to GPG checksum signatures.
+
+Contributor-ready ideas live in [docs/contributor-ideas.md](docs/contributor-ideas.md).
 
 ## License
 

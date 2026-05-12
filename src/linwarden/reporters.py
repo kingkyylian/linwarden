@@ -130,7 +130,7 @@ def render_sarif(snapshot: HostSnapshot, findings: FindingCollection) -> str:
                     {
                         "physicalLocation": {
                             "artifactLocation": {
-                                "uri": f"linwarden://host/{snapshot.hostname}"
+                                "uri": "docs/rules.md"
                             }
                         }
                     }
@@ -138,6 +138,7 @@ def render_sarif(snapshot: HostSnapshot, findings: FindingCollection) -> str:
                 "properties": {
                     "category": finding.category,
                     "severity": finding.severity,
+                    "host": snapshot.hostname,
                     "remediation": finding.remediation,
                 },
             }

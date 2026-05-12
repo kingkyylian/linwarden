@@ -9,7 +9,7 @@
             {
               "physicalLocation": {
                 "artifactLocation": {
-                  "uri": "linwarden://host/fixture-box"
+                  "uri": "docs/rules.md"
                 }
               }
             }
@@ -19,6 +19,7 @@
           },
           "properties": {
             "category": "ssh",
+            "host": "fixture-box",
             "remediation": "Set PermitRootLogin no in sshd_config and reload sshd.",
             "severity": "high"
           },
@@ -30,7 +31,7 @@
             {
               "physicalLocation": {
                 "artifactLocation": {
-                  "uri": "linwarden://host/fixture-box"
+                  "uri": "docs/rules.md"
                 }
               }
             }
@@ -40,6 +41,7 @@
           },
           "properties": {
             "category": "ssh",
+            "host": "fixture-box",
             "remediation": "Set PermitEmptyPasswords no in sshd_config and reload sshd.",
             "severity": "high"
           },
@@ -51,7 +53,7 @@
             {
               "physicalLocation": {
                 "artifactLocation": {
-                  "uri": "linwarden://host/fixture-box"
+                  "uri": "docs/rules.md"
                 }
               }
             }
@@ -61,6 +63,7 @@
           },
           "properties": {
             "category": "kernel",
+            "host": "fixture-box",
             "remediation": "Set kernel.randomize_va_space=2 with sysctl and persist it under /etc/sysctl.d/.",
             "severity": "high"
           },
@@ -72,7 +75,7 @@
             {
               "physicalLocation": {
                 "artifactLocation": {
-                  "uri": "linwarden://host/fixture-box"
+                  "uri": "docs/rules.md"
                 }
               }
             }
@@ -82,6 +85,7 @@
           },
           "properties": {
             "category": "network",
+            "host": "fixture-box",
             "remediation": "Set net.ipv6.conf.all.accept_redirects=0 unless redirects are explicitly required.",
             "severity": "low"
           },
@@ -93,7 +97,7 @@
             {
               "physicalLocation": {
                 "artifactLocation": {
-                  "uri": "linwarden://host/fixture-box"
+                  "uri": "docs/rules.md"
                 }
               }
             }
@@ -103,6 +107,7 @@
           },
           "properties": {
             "category": "kernel",
+            "host": "fixture-box",
             "remediation": "Set vm.mmap_min_addr to at least 65536 unless a legacy workload requires otherwise.",
             "severity": "high"
           },
@@ -114,7 +119,7 @@
             {
               "physicalLocation": {
                 "artifactLocation": {
-                  "uri": "linwarden://host/fixture-box"
+                  "uri": "docs/rules.md"
                 }
               }
             }
@@ -124,6 +129,7 @@
           },
           "properties": {
             "category": "filesystem",
+            "host": "fixture-box",
             "remediation": "Set fs.protected_hardlinks=1 and persist it under /etc/sysctl.d/.",
             "severity": "high"
           },
@@ -135,7 +141,7 @@
             {
               "physicalLocation": {
                 "artifactLocation": {
-                  "uri": "linwarden://host/fixture-box"
+                  "uri": "docs/rules.md"
                 }
               }
             }
@@ -145,6 +151,7 @@
           },
           "properties": {
             "category": "filesystem",
+            "host": "fixture-box",
             "remediation": "Set fs.protected_symlinks=1 and persist it under /etc/sysctl.d/.",
             "severity": "high"
           },
@@ -156,7 +163,7 @@
             {
               "physicalLocation": {
                 "artifactLocation": {
-                  "uri": "linwarden://host/fixture-box"
+                  "uri": "docs/rules.md"
                 }
               }
             }
@@ -166,6 +173,7 @@
           },
           "properties": {
             "category": "kernel",
+            "host": "fixture-box",
             "remediation": "Set kernel.kptr_restrict=1 or 2 and persist it under /etc/sysctl.d/.",
             "severity": "medium"
           },

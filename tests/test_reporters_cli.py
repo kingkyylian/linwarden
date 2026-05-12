@@ -51,6 +51,10 @@ class ReporterAndCliTests(unittest.TestCase):
         self.assertEqual(payload["runs"][0]["tool"]["driver"]["name"], "Linwarden")
         self.assertEqual(payload["runs"][0]["results"][0]["ruleId"], "LNX-SSH-001")
         self.assertEqual(payload["runs"][0]["results"][0]["level"], "error")
+        self.assertEqual(
+            payload["runs"][0]["results"][0]["locations"][0]["physicalLocation"]["artifactLocation"]["uri"],
+            "docs/rules.md",
+        )
 
     def test_renders_configured_suppressions_transparently(self) -> None:
         snapshot = collect_host_snapshot(

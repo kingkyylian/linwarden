@@ -17,12 +17,31 @@ from .parsers import (
 
 
 SYSCTL_PATHS = {
+    "fs.protected_hardlinks": ("sys", "fs", "protected_hardlinks"),
+    "fs.protected_symlinks": ("sys", "fs", "protected_symlinks"),
+    "kernel.kptr_restrict": ("sys", "kernel", "kptr_restrict"),
     "kernel.randomize_va_space": ("sys", "kernel", "randomize_va_space"),
     "net.ipv4.ip_forward": ("sys", "net", "ipv4", "ip_forward"),
     "net.ipv4.conf.all.accept_redirects": (
         "sys",
         "net",
         "ipv4",
+        "conf",
+        "all",
+        "accept_redirects",
+    ),
+    "net.ipv6.conf.all.forwarding": (
+        "sys",
+        "net",
+        "ipv6",
+        "conf",
+        "all",
+        "forwarding",
+    ),
+    "net.ipv6.conf.all.accept_redirects": (
+        "sys",
+        "net",
+        "ipv6",
         "conf",
         "all",
         "accept_redirects",

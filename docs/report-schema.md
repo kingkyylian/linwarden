@@ -1,15 +1,16 @@
 # JSON Report Schema
 
-Linwarden JSON reports are intended for CI and fleet ingestion. The current schema version is `1.0`.
+Linwarden JSON reports are intended for CI and fleet ingestion. The current schema version is `1.1`.
 
 ## Top-Level Shape
 
 ```json
 {
-  "schema_version": "1.0",
+  "schema_version": "1.1",
   "host": {},
   "summary": {},
-  "findings": []
+  "findings": [],
+  "suppressed_findings": []
 }
 ```
 
@@ -46,3 +47,21 @@ Linwarden JSON reports are intended for CI and fleet ingestion. The current sche
 | `impact` | string | Why the finding matters. |
 | `remediation` | string | Suggested fix. |
 | `references` | array | Supporting docs or manual pages. |
+
+## Suppressed Finding
+
+Suppressed findings are excluded from `summary`, `findings`, and threshold exit-code decisions, but remain visible for auditability.
+
+| Field | Type | Description |
+| --- | --- | --- |
+| `rule_id` | string | Stable rule identifier. |
+| `severity` | string | Original finding severity. |
+| `title` | string | Original finding title. |
+| `category` | string | Original finding category. |
+| `evidence` | string | Evidence that would have triggered the rule. |
+| `reason` | string | Profile or user-provided justification. |
+| `source` | string | `profile`, `disabled_rule`, or `suppression`. |
+
+## SARIF
+
+SARIF output uses SARIF `2.1.0`. Active findings are emitted as SARIF results; suppressed findings are intentionally excluded from SARIF so CI/security ingestion reflects only actionable findings.

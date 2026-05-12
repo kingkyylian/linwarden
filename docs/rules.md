@@ -45,6 +45,29 @@ Linwarden uses static, rootless evidence. For SSH, this means the parser reads `
 - Impact: Kernel null-pointer bugs can become easier to exploit.
 - Remediation: Set `vm.mmap_min_addr=65536` unless a legacy workload requires otherwise.
 
+### LNX-KRN-003: Kernel pointer exposure is unrestricted
+
+- Severity: medium
+- Evidence: `kernel.kptr_restrict=0`
+- Impact: Kernel pointer addresses can help attackers bypass kernel exploitation mitigations.
+- Remediation: Set `kernel.kptr_restrict=1` or `2` and persist it under `/etc/sysctl.d/`.
+
+## Filesystem Rules
+
+### LNX-FS-001: Hardlink protection is disabled
+
+- Severity: high
+- Evidence: `fs.protected_hardlinks=0`
+- Impact: Users may be able to create hardlinks to files they do not own.
+- Remediation: Set `fs.protected_hardlinks=1` and persist it under `/etc/sysctl.d/`.
+
+### LNX-FS-002: Symlink protection is disabled
+
+- Severity: high
+- Evidence: `fs.protected_symlinks=0`
+- Impact: Users may be exposed to symlink race attacks in sticky world-writable directories.
+- Remediation: Set `fs.protected_symlinks=1` and persist it under `/etc/sysctl.d/`.
+
 ## Network Rules
 
 ### LNX-NET-001: IPv4 forwarding is enabled
@@ -60,3 +83,17 @@ Linwarden uses static, rootless evidence. For SSH, this means the parser reads `
 - Evidence: `net.ipv4.conf.all.accept_redirects=1`
 - Impact: Malicious redirects can influence routing decisions on hostile networks.
 - Remediation: Set `net.ipv4.conf.all.accept_redirects=0` unless redirects are required.
+
+### LNX-NET-003: IPv6 forwarding is enabled
+
+- Severity: medium
+- Evidence: `net.ipv6.conf.all.forwarding=1`
+- Impact: The host can route IPv6 traffic between interfaces.
+- Remediation: Set `net.ipv6.conf.all.forwarding=0` unless the host is intentionally an IPv6 router.
+
+### LNX-NET-004: IPv6 ICMP redirects are accepted
+
+- Severity: low
+- Evidence: `net.ipv6.conf.all.accept_redirects=1`
+- Impact: Malicious redirects can influence IPv6 routing decisions on hostile networks.
+- Remediation: Set `net.ipv6.conf.all.accept_redirects=0` unless redirects are required.

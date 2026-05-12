@@ -12,6 +12,8 @@
 make test
 make compile
 make smoke
+make smoke-sarif
+make check
 ```
 
 `make compile` writes bytecode under the project-local `.pycache` directory so local sandboxed environments do not need access to user-level Python cache directories.

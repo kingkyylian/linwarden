@@ -17,3 +17,13 @@ PYTHONPATH=src python3 -m linwarden scan \
   --format json \
   --output examples/fixture-report.json
 ```
+
+Generate SARIF with a config file:
+
+```bash
+PYTHONPATH=src python3 -m linwarden scan \
+  --root tests/fixtures/linux-root \
+  --config examples/linwarden.json \
+  --format sarif \
+  --output examples/fixture-report.sarif
+```

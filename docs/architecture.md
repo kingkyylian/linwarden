@@ -8,6 +8,7 @@ Linwarden is intentionally small. The scanner is a single-process CLI with no da
 CLI args
   -> collectors.collect_host_snapshot()
   -> rules.evaluate_snapshot()
+  -> config.apply_config()
   -> reporters.render_json() or reporters.render_markdown()
   -> stdout or output file
 ```
@@ -17,10 +18,11 @@ CLI args
 | Module | Responsibility |
 | --- | --- |
 | `cli.py` | Argument parsing, output routing, threshold exit codes. |
+| `config.py` | Profiles, disabled rules, and justified suppressions. |
 | `collectors.py` | Builds a `HostSnapshot` from Linux filesystem inputs. |
 | `parsers.py` | Parses small Linux text formats such as `os-release`, `meminfo`, and `mounts`. |
 | `rules.py` | Converts a snapshot into actionable findings. |
-| `reporters.py` | Converts snapshots and findings into stable artifacts. |
+| `reporters.py` | Converts snapshots and findings into JSON, Markdown, or SARIF artifacts. |
 | `models.py` | Dataclasses shared across the scanner. |
 
 ## Rootless Collection
@@ -52,5 +54,6 @@ This is the main testability mechanism. A fixture root can emulate Linux files o
 
 - JSON output includes `schema_version`.
 - Rule IDs are stable once released.
+- Suppressed findings remain visible in JSON and Markdown reports.
 - Exit code `2` is reserved for threshold failures.
 - Reports are read-only and should not alter host state.

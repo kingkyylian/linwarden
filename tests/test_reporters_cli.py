@@ -5,11 +5,13 @@ import unittest
 
 from linwarden.cli import main
 from linwarden.collectors import collect_host_snapshot
-from linwarden.reporters import render_json, render_markdown
+from linwarden.config import apply_config, load_config
+from linwarden.reporters import render_json, render_markdown, render_sarif
 from linwarden.rules import evaluate_snapshot
 
 
 FIXTURE_ROOT = Path(__file__).parent / "fixtures" / "linux-root"
+FIXTURE_CONFIG = Path(__file__).parent / "fixtures" / "linwarden.json"
 
 
 class ReporterAndCliTests(unittest.TestCase):
@@ -22,8 +24,9 @@ class ReporterAndCliTests(unittest.TestCase):
         payload = json.loads(render_json(snapshot, evaluate_snapshot(snapshot)))
 
         self.assertEqual(payload["host"]["hostname"], "fixture-box")
-        self.assertEqual(payload["summary"]["score"], 17)
+        self.assertEqual(payload["summary"]["score"], 0)
         self.assertEqual(payload["findings"][0]["rule_id"], "LNX-SSH-001")
+        self.assertEqual(payload["suppressed_findings"], [])
 
     def test_renders_markdown_report_for_github_artifacts(self) -> None:
         snapshot = collect_host_snapshot(
@@ -36,6 +39,38 @@ class ReporterAndCliTests(unittest.TestCase):
         self.assertIn("# Linwarden Report", report)
         self.assertIn("| Severity | Rule | Title | Evidence |", report)
         self.assertIn("LNX-SSH-001", report)
+
+    def test_renders_sarif_report_for_github_code_scanning(self) -> None:
+        snapshot = collect_host_snapshot(
+            root=FIXTURE_ROOT,
+            proc_root=FIXTURE_ROOT / "proc",
+            etc_root=FIXTURE_ROOT / "etc",
+        )
+        payload = json.loads(render_sarif(snapshot, evaluate_snapshot(snapshot)))
+
+        self.assertEqual(payload["version"], "2.1.0")
+        self.assertEqual(payload["runs"][0]["tool"]["driver"]["name"], "Linwarden")
+        self.assertEqual(payload["runs"][0]["results"][0]["ruleId"], "LNX-SSH-001")
+        self.assertEqual(payload["runs"][0]["results"][0]["level"], "error")
+
+    def test_renders_configured_suppressions_transparently(self) -> None:
+        snapshot = collect_host_snapshot(
+            root=FIXTURE_ROOT,
+            proc_root=FIXTURE_ROOT / "proc",
+            etc_root=FIXTURE_ROOT / "etc",
+        )
+        result = apply_config(evaluate_snapshot(snapshot), load_config(FIXTURE_CONFIG))
+        payload = json.loads(
+            render_json(
+                snapshot,
+                result.active_findings,
+                suppressed_findings=result.suppressed_findings,
+            )
+        )
+
+        self.assertNotIn("LNX-SSH-002", {finding["rule_id"] for finding in payload["findings"]})
+        self.assertIn("LNX-SSH-002", {finding["rule_id"] for finding in payload["suppressed_findings"]})
+        self.assertEqual(payload["summary"]["total"], 7)
 
     def test_cli_returns_failure_code_when_threshold_is_met(self) -> None:
         out = StringIO()
@@ -57,7 +92,36 @@ class ReporterAndCliTests(unittest.TestCase):
 
         self.assertEqual(exit_code, 2)
         self.assertEqual(err.getvalue(), "")
-        self.assertEqual(json.loads(out.getvalue())["summary"]["by_severity"]["high"], 3)
+        self.assertEqual(json.loads(out.getvalue())["summary"]["by_severity"]["high"], 5)
+
+    def test_cli_applies_config_and_outputs_sarif(self) -> None:
+        out = StringIO()
+        err = StringIO()
+
+        exit_code = main(
+            [
+                "scan",
+                "--root",
+                str(FIXTURE_ROOT),
+                "--config",
+                str(FIXTURE_CONFIG),
+                "--format",
+                "sarif",
+                "--fail-on",
+                "critical",
+            ],
+            stdout=out,
+            stderr=err,
+        )
+
+        payload = json.loads(out.getvalue())
+        self.assertEqual(exit_code, 0)
+        self.assertEqual(err.getvalue(), "")
+        self.assertEqual(payload["runs"][0]["results"][0]["ruleId"], "LNX-SSH-001")
+        self.assertNotIn(
+            "LNX-SSH-002",
+            {result["ruleId"] for result in payload["runs"][0]["results"]},
+        )
 
 
 if __name__ == "__main__":

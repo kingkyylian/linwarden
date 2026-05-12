@@ -1,6 +1,6 @@
 # Linwarden
 
-Linwarden is a rootless Linux host inventory and hardening audit CLI. It reads ordinary system files such as `/etc/os-release`, `/etc/ssh/sshd_config`, and selected `/proc/sys` values, then produces a human-readable Markdown report or a stable JSON artifact for CI, fleet jobs, and GitHub Actions.
+Linwarden is a rootless Linux host inventory and hardening audit CLI. It reads ordinary system files such as `/etc/os-release`, `/etc/ssh/sshd_config`, and selected `/proc/sys` values, then produces Markdown, JSON, or SARIF artifacts for CI, fleet jobs, and GitHub Actions.
 
 The project goal is practical: give maintainers a small, auditable tool that explains risky Linux defaults without needing an agent, daemon, privileged service, external database, or network access.
 
@@ -9,6 +9,8 @@ The project goal is practical: give maintainers a small, auditable tool that exp
 - Rootless collection from `/etc`, `/proc`, and procfs sysctl paths.
 - Deterministic JSON output for CI pipelines and scheduled host scans.
 - Markdown output suitable for GitHub job summaries and issue attachments.
+- SARIF output suitable for GitHub-native security ingestion.
+- JSON config support for profiles, disabled rules, and justified suppressions.
 - Severity scoring with `critical`, `high`, `medium`, and `low` buckets.
 - CI-friendly exit thresholds through `--fail-on`.
 - Fixture-root scanning for tests, containers, forensic copies, and offline analysis.
@@ -40,7 +42,8 @@ Exit code `2` means at least one finding matched the selected threshold.
 
 ```text
 linwarden scan [--root PATH] [--proc-root PATH] [--etc-root PATH]
-               [--format markdown|json] [--output PATH]
+               [--config PATH] [--format markdown|json|sarif]
+               [--output PATH]
                [--fail-on off|low|medium|high|critical]
 ```
 
@@ -49,9 +52,38 @@ Common examples:
 ```bash
 linwarden scan --format markdown --output linwarden-report.md
 linwarden scan --format json --fail-on high
+linwarden scan --config linwarden.json --format sarif --output linwarden.sarif
 linwarden scan --root /mnt/server-image --format json
 linwarden scan --proc-root /host/proc --etc-root /host/etc --format markdown
 ```
+
+## Configuration
+
+Linwarden accepts a zero-dependency JSON config file:
+
+```json
+{
+  "profile": "router",
+  "disabled_rules": ["LNX-NET-002"],
+  "suppressions": [
+    {
+      "rule_id": "LNX-SSH-002",
+      "reason": "Temporary migration host; password auth removed after cutover."
+    }
+  ]
+}
+```
+
+Profiles:
+
+| Profile | Behavior |
+| --- | --- |
+| `server` | Default. No profile suppressions. |
+| `workstation` | No profile suppressions yet. |
+| `router` | Suppresses IPv4 and IPv6 forwarding findings. |
+| `container` | Suppresses selected host-kernel findings that may be inherited. |
+
+Suppressed findings remain visible in JSON and Markdown reports. SARIF output includes active findings only.
 
 ## Exit Codes
 
@@ -69,8 +101,13 @@ linwarden scan --proc-root /host/proc --etc-root /host/etc --format markdown
 | `LNX-SSH-002` | medium | SSH | `PasswordAuthentication yes` is enabled. |
 | `LNX-KRN-001` | high | Kernel | `kernel.randomize_va_space=0` disables ASLR. |
 | `LNX-KRN-002` | high | Kernel | `vm.mmap_min_addr` is below `65536`. |
+| `LNX-KRN-003` | medium | Kernel | `kernel.kptr_restrict=0` exposes kernel pointers. |
+| `LNX-FS-001` | high | Filesystem | `fs.protected_hardlinks=0` disables hardlink protection. |
+| `LNX-FS-002` | high | Filesystem | `fs.protected_symlinks=0` disables symlink protection. |
 | `LNX-NET-001` | medium | Network | `net.ipv4.ip_forward=1` is enabled. |
 | `LNX-NET-002` | low | Network | `net.ipv4.conf.all.accept_redirects=1` is enabled. |
+| `LNX-NET-003` | medium | Network | `net.ipv6.conf.all.forwarding=1` is enabled. |
+| `LNX-NET-004` | low | Network | `net.ipv6.conf.all.accept_redirects=1` is enabled. |
 
 Rule details live in [docs/rules.md](docs/rules.md).
 
@@ -92,15 +129,17 @@ The score is intentionally simple. It is a triage signal, not a compliance ratin
 ```text
 src/linwarden/
   cli.py          command line entry point
+  config.py       profiles, disabled rules, and suppressions
   collectors.py   host snapshot collection
   parsers.py      small parsers for Linux files
   rules.py        built-in hardening checks
-  reporters.py    JSON and Markdown rendering
+  reporters.py    JSON, Markdown, and SARIF rendering
   models.py       report data structures
 tests/
   fixtures/       deterministic Linux fixture root
 docs/
   architecture.md implementation overview
+  configuration.md profile and suppression config
   rules.md        rule catalog
   report-schema.md JSON report contract
 ```
@@ -111,6 +150,8 @@ docs/
 make test
 make compile
 make smoke
+make smoke-sarif
+make check
 ```
 
 No network services or privileged permissions are required for the test suite.
@@ -131,10 +172,9 @@ Please report vulnerabilities using [SECURITY.md](SECURITY.md).
 ## Roadmap
 
 - Optional systemd unit inventory.
-- Additional sysctl rules for IPv6 and bridge networking.
+- Additional bridge networking and firewall rules.
 - Package manager freshness adapters for Debian, Ubuntu, Fedora, and Arch.
-- SARIF reporter for GitHub code scanning workflows.
-- Rule suppression file with explicit justifications.
+- Release automation for tags and GitHub Releases.
 
 ## License
 

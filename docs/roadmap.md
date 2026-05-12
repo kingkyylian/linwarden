@@ -2,10 +2,9 @@
 
 ## Near Term
 
-- Add rule suppression with required justification text.
-- Add SARIF output for GitHub code scanning.
-- Add `--profile server|workstation|container` rule profiles.
-- Add IPv6 forwarding and redirect checks.
+- Expand profile catalog with clearer server, workstation, router, and container defaults.
+- Add bridge networking and firewall checks.
+- Add real Linux integration test fixtures from common distributions.
 
 ## Later
 

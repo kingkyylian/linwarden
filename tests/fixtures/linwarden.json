@@ -1,0 +1,10 @@
+{
+  "profile": "router",
+  "disabled_rules": ["LNX-NET-002"],
+  "suppressions": [
+    {
+      "rule_id": "LNX-SSH-002",
+      "reason": "Fixture keeps password auth enabled."
+    }
+  ]
+}

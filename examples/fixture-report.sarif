@@ -1,0 +1,305 @@
+{
+  "$schema": "https://json.schemastore.org/sarif-2.1.0.json",
+  "runs": [
+    {
+      "results": [
+        {
+          "level": "error",
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "linwarden://host/fixture-box"
+                }
+              }
+            }
+          ],
+          "message": {
+            "text": "SSH root login is permitted: PermitRootLogin yes"
+          },
+          "properties": {
+            "category": "ssh",
+            "remediation": "Set PermitRootLogin no in sshd_config and reload sshd.",
+            "severity": "high"
+          },
+          "ruleId": "LNX-SSH-001"
+        },
+        {
+          "level": "error",
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "linwarden://host/fixture-box"
+                }
+              }
+            }
+          ],
+          "message": {
+            "text": "Address space layout randomization is disabled: kernel.randomize_va_space=0"
+          },
+          "properties": {
+            "category": "kernel",
+            "remediation": "Set kernel.randomize_va_space=2 with sysctl and persist it under /etc/sysctl.d/.",
+            "severity": "high"
+          },
+          "ruleId": "LNX-KRN-001"
+        },
+        {
+          "level": "note",
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "linwarden://host/fixture-box"
+                }
+              }
+            }
+          ],
+          "message": {
+            "text": "IPv6 ICMP redirects are accepted: net.ipv6.conf.all.accept_redirects=1"
+          },
+          "properties": {
+            "category": "network",
+            "remediation": "Set net.ipv6.conf.all.accept_redirects=0 unless redirects are explicitly required.",
+            "severity": "low"
+          },
+          "ruleId": "LNX-NET-004"
+        },
+        {
+          "level": "error",
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "linwarden://host/fixture-box"
+                }
+              }
+            }
+          ],
+          "message": {
+            "text": "Low memory mappings are not protected: vm.mmap_min_addr=0"
+          },
+          "properties": {
+            "category": "kernel",
+            "remediation": "Set vm.mmap_min_addr to at least 65536 unless a legacy workload requires otherwise.",
+            "severity": "high"
+          },
+          "ruleId": "LNX-KRN-002"
+        },
+        {
+          "level": "error",
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "linwarden://host/fixture-box"
+                }
+              }
+            }
+          ],
+          "message": {
+            "text": "Hardlink protection is disabled: fs.protected_hardlinks=0"
+          },
+          "properties": {
+            "category": "filesystem",
+            "remediation": "Set fs.protected_hardlinks=1 and persist it under /etc/sysctl.d/.",
+            "severity": "high"
+          },
+          "ruleId": "LNX-FS-001"
+        },
+        {
+          "level": "error",
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "linwarden://host/fixture-box"
+                }
+              }
+            }
+          ],
+          "message": {
+            "text": "Symlink protection is disabled: fs.protected_symlinks=0"
+          },
+          "properties": {
+            "category": "filesystem",
+            "remediation": "Set fs.protected_symlinks=1 and persist it under /etc/sysctl.d/.",
+            "severity": "high"
+          },
+          "ruleId": "LNX-FS-002"
+        },
+        {
+          "level": "warning",
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "linwarden://host/fixture-box"
+                }
+              }
+            }
+          ],
+          "message": {
+            "text": "Kernel pointer exposure is unrestricted: kernel.kptr_restrict=0"
+          },
+          "properties": {
+            "category": "kernel",
+            "remediation": "Set kernel.kptr_restrict=1 or 2 and persist it under /etc/sysctl.d/.",
+            "severity": "medium"
+          },
+          "ruleId": "LNX-KRN-003"
+        }
+      ],
+      "tool": {
+        "driver": {
+          "informationUri": "https://github.com/kingkyylian/linwarden",
+          "name": "Linwarden",
+          "rules": [
+            {
+              "fullDescription": {
+                "text": "Remote attackers can attempt direct privileged logins instead of going through named accounts."
+              },
+              "help": {
+                "text": "Set PermitRootLogin no in sshd_config and reload sshd."
+              },
+              "id": "LNX-SSH-001",
+              "name": "SSH root login is permitted",
+              "properties": {
+                "category": "ssh",
+                "references": [
+                  "man:sshd_config(5)"
+                ],
+                "severity": "high"
+              },
+              "shortDescription": {
+                "text": "SSH root login is permitted"
+              }
+            },
+            {
+              "fullDescription": {
+                "text": "Memory corruption exploits become easier when process address layouts are predictable."
+              },
+              "help": {
+                "text": "Set kernel.randomize_va_space=2 with sysctl and persist it under /etc/sysctl.d/."
+              },
+              "id": "LNX-KRN-001",
+              "name": "Address space layout randomization is disabled",
+              "properties": {
+                "category": "kernel",
+                "references": [
+                  "https://docs.kernel.org/admin-guide/sysctl/kernel.html"
+                ],
+                "severity": "high"
+              },
+              "shortDescription": {
+                "text": "Address space layout randomization is disabled"
+              }
+            },
+            {
+              "fullDescription": {
+                "text": "Malicious redirects can influence IPv6 routing decisions on hostile networks."
+              },
+              "help": {
+                "text": "Set net.ipv6.conf.all.accept_redirects=0 unless redirects are explicitly required."
+              },
+              "id": "LNX-NET-004",
+              "name": "IPv6 ICMP redirects are accepted",
+              "properties": {
+                "category": "network",
+                "references": [
+                  "https://docs.kernel.org/networking/ip-sysctl.html"
+                ],
+                "severity": "low"
+              },
+              "shortDescription": {
+                "text": "IPv6 ICMP redirects are accepted"
+              }
+            },
+            {
+              "fullDescription": {
+                "text": "Low-address memory mappings can make kernel null-pointer bugs easier to exploit."
+              },
+              "help": {
+                "text": "Set vm.mmap_min_addr to at least 65536 unless a legacy workload requires otherwise."
+              },
+              "id": "LNX-KRN-002",
+              "name": "Low memory mappings are not protected",
+              "properties": {
+                "category": "kernel",
+                "references": [
+                  "https://docs.kernel.org/admin-guide/sysctl/vm.html"
+                ],
+                "severity": "high"
+              },
+              "shortDescription": {
+                "text": "Low memory mappings are not protected"
+              }
+            },
+            {
+              "fullDescription": {
+                "text": "Users may be able to create hardlinks to files they do not own, weakening common privilege escalation protections."
+              },
+              "help": {
+                "text": "Set fs.protected_hardlinks=1 and persist it under /etc/sysctl.d/."
+              },
+              "id": "LNX-FS-001",
+              "name": "Hardlink protection is disabled",
+              "properties": {
+                "category": "filesystem",
+                "references": [
+                  "https://docs.kernel.org/admin-guide/sysctl/fs.html"
+                ],
+                "severity": "high"
+              },
+              "shortDescription": {
+                "text": "Hardlink protection is disabled"
+              }
+            },
+            {
+              "fullDescription": {
+                "text": "Users may be exposed to symlink race attacks in sticky world-writable directories."
+              },
+              "help": {
+                "text": "Set fs.protected_symlinks=1 and persist it under /etc/sysctl.d/."
+              },
+              "id": "LNX-FS-002",
+              "name": "Symlink protection is disabled",
+              "properties": {
+                "category": "filesystem",
+                "references": [
+                  "https://docs.kernel.org/admin-guide/sysctl/fs.html"
+                ],
+                "severity": "high"
+              },
+              "shortDescription": {
+                "text": "Symlink protection is disabled"
+              }
+            },
+            {
+              "fullDescription": {
+                "text": "Kernel pointer addresses can help attackers bypass kernel exploitation mitigations."
+              },
+              "help": {
+                "text": "Set kernel.kptr_restrict=1 or 2 and persist it under /etc/sysctl.d/."
+              },
+              "id": "LNX-KRN-003",
+              "name": "Kernel pointer exposure is unrestricted",
+              "properties": {
+                "category": "kernel",
+                "references": [
+                  "https://docs.kernel.org/admin-guide/sysctl/kernel.html"
+                ],
+                "severity": "medium"
+              },
+              "shortDescription": {
+                "text": "Kernel pointer exposure is unrestricted"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "version": "2.1.0"
+}

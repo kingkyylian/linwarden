@@ -33,3 +33,9 @@ jobs:
 
       - name: Smoke scan fixture
         run: linwarden scan --root tests/fixtures/linux-root --format json --fail-on off
+
+      - name: Smoke SARIF output
+        run: linwarden scan --root tests/fixtures/linux-root --config tests/fixtures/linwarden.json --format sarif --fail-on critical > linwarden.sarif
+
+      - name: Validate SARIF JSON
+        run: python -m json.tool linwarden.sarif > /dev/null

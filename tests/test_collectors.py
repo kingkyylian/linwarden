@@ -22,6 +22,8 @@ class CollectorTests(unittest.TestCase):
         self.assertEqual(snapshot.memory.total_mib, 16000)
         self.assertEqual(snapshot.memory.available_mib, 8000)
         self.assertEqual(snapshot.sysctls["net.ipv4.ip_forward"], "1")
+        self.assertEqual(snapshot.sysctls["net.ipv6.conf.all.forwarding"], "1")
+        self.assertEqual(snapshot.sysctls["fs.protected_hardlinks"], "0")
         self.assertEqual(snapshot.sshd_options["permitrootlogin"], "yes")
         self.assertEqual(snapshot.mounts[0].mount_point, "/")
 

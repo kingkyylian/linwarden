@@ -52,6 +52,23 @@ class Finding:
 
 
 @dataclass(frozen=True)
+class SuppressedFinding:
+    rule_id: str
+    severity: str
+    title: str
+    category: str
+    evidence: str
+    reason: str
+    source: str
+
+
+@dataclass(frozen=True)
+class EvaluationResult:
+    active_findings: tuple[Finding, ...]
+    suppressed_findings: tuple[SuppressedFinding, ...]
+
+
+@dataclass(frozen=True)
 class FindingSummary:
     total: int
     by_severity: dict[str, int]

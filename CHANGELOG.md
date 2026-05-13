@@ -2,7 +2,7 @@
 
 All notable changes to Linwarden are documented here.
 
-## Unreleased
+## 0.11.0 - 2026-05-13
 
 - Added rootless detection for enabled systemd services that appear externally bound.
 - Added `LNX-SVC-001` for enabled systemd service wildcard binds.

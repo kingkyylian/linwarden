@@ -12,8 +12,8 @@ class ReleaseAssetTests(unittest.TestCase):
     def test_writes_stable_sha256_manifest_for_dist_files(self) -> None:
         with TemporaryDirectory() as temp_dir:
             dist = Path(temp_dir)
-            wheel = dist / "linwarden-0.10.1-py3-none-any.whl"
-            sdist = dist / "linwarden-0.10.1.tar.gz"
+            wheel = dist / "linwarden-0.11.0-py3-none-any.whl"
+            sdist = dist / "linwarden-0.11.0.tar.gz"
             wheel.write_bytes(b"wheel")
             sdist.write_bytes(b"sdist")
 

@@ -40,7 +40,7 @@ class ActionMetadataTests(unittest.TestCase):
     def test_github_actions_docs_use_the_composite_action(self) -> None:
         text = DOCS.read_text(encoding="utf-8")
 
-        self.assertIn("uses: kingkyylian/linwarden@v0.10.1", text)
+        self.assertIn("uses: kingkyylian/linwarden@v0.11.0", text)
         self.assertIn("upload-sarif: \"true\"", text)
         self.assertIn("add-summary: \"true\"", text)
 

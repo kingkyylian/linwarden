@@ -4,6 +4,8 @@ from pathlib import Path
 ACTION = Path(__file__).resolve().parents[1] / "action.yml"
 DOCS = Path(__file__).resolve().parents[1] / "docs" / "github-actions.md"
 CI_WORKFLOW = Path(__file__).resolve().parents[1] / ".github" / "workflows" / "ci.yml"
+RELEASE_WORKFLOW = Path(__file__).resolve().parents[1] / ".github" / "workflows" / "release.yml"
+RELEASE_DOCS = Path(__file__).resolve().parents[1] / "docs" / "release.md"
 
 
 class ActionMetadataTests(unittest.TestCase):
@@ -79,6 +81,18 @@ class ActionMetadataTests(unittest.TestCase):
         self.assertIn("linwarden-action.md", text)
         self.assertIn("upload-sarif:", text)
         self.assertIn('add-summary: "true"', text)
+
+    def test_release_workflow_attests_dist_artifacts(self) -> None:
+        text = RELEASE_WORKFLOW.read_text(encoding="utf-8")
+        docs = RELEASE_DOCS.read_text(encoding="utf-8")
+
+        self.assertIn("id-token: write", text)
+        self.assertIn("attestations: write", text)
+        self.assertIn("artifact-metadata: write", text)
+        self.assertIn("uses: actions/attest@v4", text)
+        self.assertIn("subject-path: dist/*", text)
+        self.assertIn("gh attestation verify", docs)
+        self.assertIn("dist/*", docs)
 
 
 if __name__ == "__main__":

@@ -231,7 +231,6 @@ Please report vulnerabilities using [SECURITY.md](SECURITY.md).
 - Optional systemd unit inventory.
 - Additional bridge networking rules.
 - Package vulnerability feed adapters beyond local package manager metadata.
-- Sigstore or GitHub artifact attestation support in addition to GPG checksum signatures.
 
 Contributor-ready ideas live in [docs/contributor-ideas.md](docs/contributor-ideas.md).
 

@@ -7,7 +7,7 @@ git tag v0.9.0
 git push origin v0.9.0
 ```
 
-The release workflow validates the project, builds source and wheel artifacts, and writes `dist/SHA256SUMS`.
+The release workflow validates the project, builds source and wheel artifacts, writes `dist/SHA256SUMS`, and emits GitHub artifact attestations for `dist/*`.
 
 ## Release Checklist
 
@@ -17,7 +17,8 @@ The release workflow validates the project, builds source and wheel artifacts, a
 4. Run `python scripts/release_assets.py dist`.
 5. Confirm `dist/SHA256SUMS` contains only the intended release files.
 6. Push the version tag.
-7. Link the release notes to [github-actions.md](github-actions.md), [comparison.md](comparison.md), and [launch.md](launch.md).
+7. Verify published artifact attestations with `gh attestation verify dist/* --repo kingkyylian/linwarden`.
+8. Link the release notes to [github-actions.md](github-actions.md), [comparison.md](comparison.md), and [launch.md](launch.md).
 
 ## Optional GPG Signing
 
@@ -29,6 +30,16 @@ Configure these repository secrets to add a detached signature for `SHA256SUMS`:
 | `GPG_PASSPHRASE` | Optional key passphrase. |
 
 When configured, the release includes `SHA256SUMS.asc`.
+
+## Artifact Attestations
+
+Every tag release creates GitHub artifact attestations for the files in `dist/*` after checksum generation and optional GPG signing. Download release assets locally, then verify them with:
+
+```bash
+gh attestation verify dist/* --repo kingkyylian/linwarden
+```
+
+The attestations complement `SHA256SUMS` and optional `SHA256SUMS.asc`; they do not replace those release assets.
 
 ## Optional PyPI Publishing
 

@@ -26,7 +26,7 @@ jobs:
         uses: actions/checkout@v6
 
       - name: Run Linwarden
-        uses: kingkyylian/linwarden@v0.11.0
+        uses: kingkyylian/linwarden@v0.12.0
         with:
           root: tests/fixtures/linux-root
           format: sarif
@@ -65,7 +65,7 @@ jobs:
           docker rm "$image_id"
 
       - name: Run Linwarden
-        uses: kingkyylian/linwarden@v0.11.0
+        uses: kingkyylian/linwarden@v0.12.0
         with:
           root: container-root
           format: sarif
@@ -79,7 +79,7 @@ Use explicit procfs, sysfs, and `/etc` roots when a job mounts host paths separa
 
 ```yaml
 - name: Run Linwarden against mounted host paths
-  uses: kingkyylian/linwarden@v0.11.0
+  uses: kingkyylian/linwarden@v0.12.0
   with:
     root: /host
     sys-root: /host/sys
@@ -93,7 +93,7 @@ Pass a generated local JSON feed when an earlier CI step has already matched pac
 
 ```yaml
 - name: Run Linwarden with local vulnerability feed
-  uses: kingkyylian/linwarden@v0.11.0
+  uses: kingkyylian/linwarden@v0.12.0
   with:
     root: container-root
     vulnerability-feed: linwarden-vulnerabilities.json
@@ -108,7 +108,7 @@ Use this workflow for operators who want the report directly in the Actions run.
 
 ```yaml
 - name: Run Linwarden
-  uses: kingkyylian/linwarden@v0.11.0
+  uses: kingkyylian/linwarden@v0.12.0
   with:
     root: tests/fixtures/linux-root
     format: markdown
@@ -122,7 +122,7 @@ Use multiline `sshd-match` input when OpenSSH `Match` blocks need a concrete con
 
 ```yaml
 - name: Run Linwarden with SSH Match context
-  uses: kingkyylian/linwarden@v0.11.0
+  uses: kingkyylian/linwarden@v0.12.0
   with:
     root: /
     format: json

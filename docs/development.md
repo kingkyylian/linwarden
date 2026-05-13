@@ -50,6 +50,6 @@ This keeps tests stable on macOS, Linux, and CI.
 
 ## Release Workflow
 
-Pushing a tag like `v0.11.0` runs tests, compile, Ruff, and mypy, builds source and wheel artifacts, creates `dist/SHA256SUMS`, optionally signs that checksum manifest when GPG secrets are configured, then creates a GitHub Release with generated notes.
+Pushing a tag like `v0.12.0` runs tests, compile, Ruff, and mypy, builds source and wheel artifacts, creates `dist/SHA256SUMS`, optionally signs that checksum manifest when GPG secrets are configured, then creates a GitHub Release with generated notes.
 
 Set repository variable `PUBLISH_PYPI=true` only after PyPI trusted publishing is configured for this repository.

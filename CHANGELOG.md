@@ -2,7 +2,7 @@
 
 All notable changes to Linwarden are documented here.
 
-## Unreleased
+## 0.12.0 - 2026-05-13
 
 - Added bridge interface and forwarding posture checks for container-host scenarios.
 - Added `LNX-NET-005`, `LNX-NET-006`, and `LNX-NET-007` for bridge firewall hooks and bridge forwarding.

@@ -2,7 +2,7 @@
 
 All notable changes to Linwarden are documented here.
 
-## Unreleased
+## 0.8.0 - 2026-05-13
 
 - Added `LNX-SSH-004` for `MaxAuthTries` values above `4`.
 - Added `LNX-SSH-005` for broadly enabled SSH TCP forwarding.

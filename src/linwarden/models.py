@@ -45,12 +45,33 @@ class FirewallStatus:
 
 
 @dataclass(frozen=True)
+class BridgeInterface:
+    name: str
+    members: tuple[str, ...]
+    ipv4_forwarding: Optional[bool]
+    ipv6_forwarding: Optional[bool]
+    source: str
+
+
+@dataclass(frozen=True)
 class SystemdServiceExposure:
     name: str
     bind: str
     source: str
     enabled_source: str
     exec_start: str
+
+
+@dataclass(frozen=True)
+class PackageVulnerability:
+    package: str
+    installed_version: str
+    fixed_version: str
+    vulnerability_id: str
+    severity: str
+    summary: str
+    url: str
+    source: str
 
 
 @dataclass(frozen=True)
@@ -68,7 +89,9 @@ class HostSnapshot:
     sshd_match_context: tuple[str, ...]
     package_status: PackageStatus
     firewall_status: FirewallStatus
+    bridge_interfaces: tuple[BridgeInterface, ...]
     systemd_service_exposures: tuple[SystemdServiceExposure, ...]
+    package_vulnerabilities: tuple[PackageVulnerability, ...]
 
 
 @dataclass(frozen=True)

@@ -41,7 +41,9 @@ def _build_parser() -> argparse.ArgumentParser:
     scan.add_argument("--root", type=Path, default=Path("/"), help="filesystem root to inspect")
     scan.add_argument("--proc-root", type=Path, help="override procfs root")
     scan.add_argument("--etc-root", type=Path, help="override /etc root")
+    scan.add_argument("--sys-root", type=Path, help="override sysfs root")
     scan.add_argument("--config", type=Path, help="JSON config file with profile and suppressions")
+    scan.add_argument("--vulnerability-feed", type=Path, help="local package vulnerability feed JSON file")
     scan.add_argument("--sshd-mode", choices=("static", "effective", "auto"), default="static")
     scan.add_argument("--sshd-binary", default="sshd", help="sshd binary to use with effective or auto mode")
     scan.add_argument(
@@ -74,9 +76,11 @@ def _scan(args: argparse.Namespace, stdout: TextIO, stderr: TextIO) -> int:
             root=args.root,
             proc_root=args.proc_root or args.root / "proc",
             etc_root=args.etc_root or args.root / "etc",
+            sys_root=args.sys_root or args.root / "sys",
             sshd_mode=args.sshd_mode,
             sshd_binary=args.sshd_binary,
             sshd_match_context=tuple(args.sshd_match),
+            vulnerability_feed=args.vulnerability_feed,
         )
     except (OSError, RuntimeError, ValueError) as exc:
         stderr.write(f"linwarden: {exc}\n")

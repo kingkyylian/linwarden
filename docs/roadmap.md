@@ -3,9 +3,8 @@
 ## Near Term
 
 - Expand profile catalog with clearer server, workstation, router, and container defaults.
-- Add bridge networking checks.
 - Add real Linux integration test fixtures from common distributions.
-- Add package vulnerability feed adapters beyond local package manager metadata.
+- Add additional package vulnerability feed formats.
 
 ## Later
 

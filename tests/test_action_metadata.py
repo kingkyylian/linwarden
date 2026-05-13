@@ -29,6 +29,8 @@ class ActionMetadataTests(unittest.TestCase):
             "output",
             "fail-on",
             "config",
+            "sys-root",
+            "vulnerability-feed",
             "sshd-mode",
             "sshd-binary",
             "sshd-match",
@@ -36,6 +38,9 @@ class ActionMetadataTests(unittest.TestCase):
             "add-summary",
         ):
             self.assertIn(f"  {input_name}:", text)
+
+        self.assertIn("VULNERABILITY_FEED", text)
+        self.assertIn("--vulnerability-feed", text)
 
     def test_github_actions_docs_use_the_composite_action(self) -> None:
         text = DOCS.read_text(encoding="utf-8")

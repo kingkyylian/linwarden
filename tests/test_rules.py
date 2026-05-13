@@ -96,6 +96,66 @@ class RuleTests(unittest.TestCase):
         self.assertIn("0.0.0.0", by_rule["LNX-SVC-001"].evidence)
         self.assertIn("review", by_rule["LNX-SVC-001"].remediation.lower())
 
+    def test_flags_bridge_netfilter_and_bridge_forwarding_posture(self) -> None:
+        with TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            etc = root / "etc"
+            proc = root / "proc"
+            bridge = root / "sys" / "class" / "net" / "docker0"
+            etc.mkdir(parents=True)
+            (proc / "sys" / "net" / "bridge").mkdir(parents=True)
+            (proc / "sys" / "net" / "ipv4" / "conf" / "docker0").mkdir(parents=True)
+            (proc / "sys" / "net" / "ipv6" / "conf" / "docker0").mkdir(parents=True)
+            (bridge / "bridge").mkdir(parents=True)
+            (bridge / "brif" / "veth123").mkdir(parents=True)
+            (etc / "os-release").write_text('ID="debian"\n', encoding="utf-8")
+            (proc / "sys" / "net" / "bridge" / "bridge-nf-call-iptables").write_text("0\n", encoding="utf-8")
+            (proc / "sys" / "net" / "bridge" / "bridge-nf-call-ip6tables").write_text("0\n", encoding="utf-8")
+            (proc / "sys" / "net" / "ipv4" / "conf" / "docker0" / "forwarding").write_text("1\n", encoding="utf-8")
+            (proc / "sys" / "net" / "ipv6" / "conf" / "docker0" / "forwarding").write_text("0\n", encoding="utf-8")
+
+            snapshot = collect_host_snapshot(root=root, proc_root=proc, etc_root=etc)
+
+        by_rule = {finding.rule_id: finding for finding in evaluate_snapshot(snapshot)}
+
+        self.assertEqual(by_rule["LNX-NET-005"].severity, "medium")
+        self.assertIn("bridge-nf-call-iptables=0", by_rule["LNX-NET-005"].evidence)
+        self.assertEqual(by_rule["LNX-NET-006"].severity, "medium")
+        self.assertIn("bridge-nf-call-ip6tables=0", by_rule["LNX-NET-006"].evidence)
+        self.assertEqual(by_rule["LNX-NET-007"].severity, "medium")
+        self.assertIn("docker0", by_rule["LNX-NET-007"].evidence)
+
+    def test_ignores_bridge_netfilter_without_bridge_interfaces(self) -> None:
+        with TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            etc = root / "etc"
+            proc = root / "proc"
+            etc.mkdir(parents=True)
+            (proc / "sys" / "net" / "bridge").mkdir(parents=True)
+            (etc / "os-release").write_text('ID="debian"\n', encoding="utf-8")
+            (proc / "sys" / "net" / "bridge" / "bridge-nf-call-iptables").write_text("0\n", encoding="utf-8")
+
+            snapshot = collect_host_snapshot(root=root, proc_root=proc, etc_root=etc)
+
+        self.assertNotIn("LNX-NET-005", {finding.rule_id for finding in evaluate_snapshot(snapshot)})
+
+    def test_flags_package_vulnerabilities_from_local_feed(self) -> None:
+        feed = Path(__file__).parent / "fixtures" / "vulnerability-feed.json"
+        snapshot = collect_host_snapshot(
+            root=FIXTURE_ROOT,
+            proc_root=FIXTURE_ROOT / "proc",
+            etc_root=FIXTURE_ROOT / "etc",
+            vulnerability_feed=feed,
+        )
+
+        findings = [finding for finding in evaluate_snapshot(snapshot) if finding.rule_id == "LNX-PKG-004"]
+
+        self.assertEqual(len(findings), 2)
+        self.assertEqual(findings[0].severity, "critical")
+        self.assertIn("openssl", findings[0].evidence)
+        self.assertIn("CVE-2026-0001", findings[0].evidence)
+        self.assertIn("3.0.2-0ubuntu1.20", findings[0].remediation)
+
 
 if __name__ == "__main__":
     unittest.main()

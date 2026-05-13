@@ -2,6 +2,14 @@
 
 All notable changes to Linwarden are documented here.
 
+## Unreleased
+
+- Added bridge interface and forwarding posture checks for container-host scenarios.
+- Added `LNX-NET-005`, `LNX-NET-006`, and `LNX-NET-007` for bridge firewall hooks and bridge forwarding.
+- Added optional local package vulnerability feed ingestion through `--vulnerability-feed`.
+- Added `LNX-PKG-004` for feed-provided package vulnerabilities.
+- Expanded JSON host metadata and bumped report schema to `1.6`.
+
 ## 0.11.0 - 2026-05-13
 
 - Added rootless detection for enabled systemd services that appear externally bound.

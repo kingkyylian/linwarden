@@ -10,7 +10,7 @@ Linwarden is a rootless Linux hardening scanner that emits Markdown, JSON, and S
 
 Linwarden is a small Linux hardening scanner for CI and fleet triage.
 
-It reads ordinary `/etc` and `/proc` files, explains risky SSH/kernel/network/filesystem/package/firewall defaults, and emits Markdown, JSON, or SARIF. It is read-only, rootless by default, and works against live hosts, mounted roots, containers, and test fixtures.
+It reads ordinary `/etc`, `/proc`, and `/sys` files, explains risky SSH/kernel/network/filesystem/package/firewall defaults, and emits Markdown, JSON, or SARIF. It is read-only, rootless by default, and works against live hosts, mounted roots, containers, and test fixtures.
 
 Repository: https://github.com/kingkyylian/linwarden
 
@@ -27,7 +27,7 @@ Body:
 ```text
 I built Linwarden as a small read-only Linux hardening scanner for teams that want a quick posture signal without installing an agent or running privileged CI.
 
-It reads ordinary files under /etc and /proc, evaluates explainable rules, and emits Markdown, JSON, or SARIF for GitHub code scanning. It can also scan mounted roots and fixture directories, which makes it useful for image checks and offline analysis.
+It reads ordinary files under /etc, /proc, and /sys, evaluates explainable rules, and emits Markdown, JSON, or SARIF for GitHub code scanning. It can also scan mounted roots and fixture directories, which makes it useful for image checks and offline analysis.
 
 It is not meant to replace CIS/STIG tooling. The goal is fast, auditable triage with stable artifacts.
 ```
@@ -37,7 +37,7 @@ It is not meant to replace CIS/STIG tooling. The goal is fast, auditable triage 
 ```text
 I'm building Linwarden, a rootless Linux hardening scanner for CI and small fleet triage.
 
-It does not install an agent or daemon. It reads normal /etc and /proc files, checks common SSH/kernel/network/filesystem/package/firewall posture issues, and emits Markdown, JSON, or SARIF.
+It does not install an agent or daemon. It reads normal /etc, /proc, and /sys files, checks common SSH/kernel/network/filesystem/package/firewall posture issues, and emits Markdown, JSON, or SARIF.
 
 Use cases I'm targeting:
 - GitHub Actions code scanning via SARIF

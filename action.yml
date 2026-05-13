@@ -18,6 +18,12 @@ inputs:
   config:
     description: Optional Linwarden JSON config path.
     default: ""
+  sys-root:
+    description: Optional sysfs root override.
+    default: ""
+  vulnerability-feed:
+    description: Optional local package vulnerability feed JSON path.
+    default: ""
   sshd-mode:
     description: "SSH collection mode: static, effective, or auto."
     default: "static"
@@ -66,6 +72,8 @@ runs:
         OUTPUT: ${{ inputs.output }}
         FAIL_ON: ${{ inputs.fail-on }}
         CONFIG: ${{ inputs.config }}
+        SYS_ROOT: ${{ inputs.sys-root }}
+        VULNERABILITY_FEED: ${{ inputs.vulnerability-feed }}
         SSHD_MODE: ${{ inputs.sshd-mode }}
         SSHD_BINARY: ${{ inputs.sshd-binary }}
         SSHD_MATCH: ${{ inputs.sshd-match }}
@@ -94,6 +102,14 @@ runs:
 
         if [ -n "$CONFIG" ]; then
           args+=(--config "$CONFIG")
+        fi
+
+        if [ -n "$SYS_ROOT" ]; then
+          args+=(--sys-root "$SYS_ROOT")
+        fi
+
+        if [ -n "$VULNERABILITY_FEED" ]; then
+          args+=(--vulnerability-feed "$VULNERABILITY_FEED")
         fi
 
         while IFS= read -r match_context; do

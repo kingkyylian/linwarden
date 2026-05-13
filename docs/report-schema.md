@@ -1,12 +1,12 @@
 # JSON Report Schema
 
-Linwarden JSON reports are intended for CI and fleet ingestion. The current schema version is `1.4`.
+Linwarden JSON reports are intended for CI and fleet ingestion. The current schema version is `1.5`.
 
 ## Top-Level Shape
 
 ```json
 {
-  "schema_version": "1.4",
+  "schema_version": "1.5",
   "host": {},
   "summary": {},
   "findings": [],
@@ -30,6 +30,7 @@ Linwarden JSON reports are intended for CI and fleet ingestion. The current sche
 | `sshd_match_context` | array | OpenSSH `-C` Match context entries used for effective SSH collection. |
 | `package_status` | object | Package manager and update counts when known. |
 | `firewall_status` | object | Host firewall provider and enabled state when known. |
+| `systemd_service_exposures` | array | Enabled systemd services with static wildcard bind evidence. |
 
 ## Package Status
 
@@ -41,6 +42,16 @@ Linwarden JSON reports are intended for CI and fleet ingestion. The current sche
 | `source` | string | Source used for update counts, or `not found`. |
 | `metadata_age_days` | integer or null | Age of the newest known local package metadata marker. |
 | `metadata_source` | string | Source used for metadata age, or `not found`. |
+
+## Systemd Service Exposure
+
+| Field | Type | Description |
+| --- | --- | --- |
+| `name` | string | Service unit name. |
+| `bind` | string | Wildcard bind address detected in the service `ExecStart`. |
+| `source` | string | Unit file path used as evidence. |
+| `enabled_source` | string | Enablement marker path used as evidence. |
+| `exec_start` | string | `ExecStart` line that carried the bind evidence. |
 
 ## Summary
 

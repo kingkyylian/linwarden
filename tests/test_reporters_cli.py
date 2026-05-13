@@ -23,10 +23,11 @@ class ReporterAndCliTests(unittest.TestCase):
         )
         payload = json.loads(render_json(snapshot, evaluate_snapshot(snapshot)))
 
-        self.assertEqual(payload["schema_version"], "1.4")
+        self.assertEqual(payload["schema_version"], "1.5")
         self.assertEqual(payload["host"]["hostname"], "fixture-box")
         self.assertEqual(payload["host"]["sshd_match_context"], [])
         self.assertEqual(payload["host"]["package_status"]["metadata_source"], "not found")
+        self.assertEqual(payload["host"]["systemd_service_exposures"], [])
         self.assertEqual(payload["summary"]["score"], 0)
         self.assertEqual(payload["findings"][0]["rule_id"], "LNX-SSH-001")
         self.assertEqual(payload["suppressed_findings"], [])

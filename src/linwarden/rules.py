@@ -305,6 +305,26 @@ def evaluate_snapshot(snapshot: HostSnapshot) -> list[Finding]:
             )
         )
 
+    for exposure in snapshot.systemd_service_exposures:
+        findings.append(
+            Finding(
+                rule_id="LNX-SVC-001",
+                severity="medium",
+                title="Enabled service appears externally bound",
+                category="services",
+                evidence=f"{exposure.name} enabled and bound to {exposure.bind}",
+                impact=(
+                    "An enabled service with a wildcard bind can accept connections "
+                    "from non-local interfaces when network policy allows it."
+                ),
+                remediation=(
+                    "Review whether the service must listen externally; bind it to "
+                    "127.0.0.1 or ::1 when only local access is needed."
+                ),
+                references=("man:systemd.service(5)", "man:systemd.unit(5)"),
+            )
+        )
+
     return findings
 
 

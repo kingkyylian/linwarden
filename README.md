@@ -153,6 +153,7 @@ Suppressed findings remain visible in JSON and Markdown reports. SARIF output in
 | `LNX-PKG-002` | high | Packages | Security package updates are available. |
 | `LNX-PKG-003` | medium | Packages | Package metadata is stale. |
 | `LNX-FW-001` | medium | Firewall | A known host firewall is disabled. |
+| `LNX-SVC-001` | medium | Services | An enabled systemd service appears externally bound. |
 
 Rule details live in [docs/rules.md](docs/rules.md).
 
@@ -221,6 +222,7 @@ Linwarden is read-only by default. It does not modify host state, load kernel mo
 - Effective SSH mode executes `sshd -T`; use it only when scanning the live host intentionally.
 - Package metadata age relies on local cache marker mtimes and does not call package manager commands.
 - Firewalld and nftables service state is inferred from systemd enablement markers when present; config-only detection leaves enabled state unknown.
+- Enabled systemd service exposure detection is static and only flags common wildcard bind options in service unit `ExecStart` lines.
 - Missing files are treated as absent data so scans can run in containers and fixture roots.
 - Linwarden is a hardening triage tool, not a full CIS or DISA STIG compliance scanner.
 
@@ -228,7 +230,6 @@ Please report vulnerabilities using [SECURITY.md](SECURITY.md).
 
 ## Roadmap
 
-- Optional systemd unit inventory.
 - Additional bridge networking rules.
 - Package vulnerability feed adapters beyond local package manager metadata.
 

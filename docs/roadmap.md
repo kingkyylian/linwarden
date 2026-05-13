@@ -9,7 +9,6 @@
 
 ## Later
 
-- Systemd unit exposure checks.
 - Container runtime posture checks.
 
 ## Non-Goals

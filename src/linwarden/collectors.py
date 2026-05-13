@@ -1,13 +1,14 @@
 from __future__ import annotations
 
 import platform
+import shlex
 import socket
 import subprocess
 import time
 from pathlib import Path
 from typing import Optional, Sequence, Union
 
-from .models import FirewallStatus, HostSnapshot, PackageStatus
+from .models import FirewallStatus, HostSnapshot, PackageStatus, SystemdServiceExposure
 from .parsers import (
     parse_loadavg,
     parse_meminfo,
@@ -84,6 +85,7 @@ def collect_host_snapshot(
         sshd_match_context=sshd_context,
         package_status=_read_package_status(root_path, os_release),
         firewall_status=_read_firewall_status(etc_path),
+        systemd_service_exposures=_read_systemd_service_exposures(root_path, etc_path),
     )
 
 
@@ -283,3 +285,171 @@ def _systemd_wants_marker(etc_root: Path, service_name: str) -> Path:
 
 def _path_exists_or_symlink(path: Path) -> bool:
     return path.exists() or path.is_symlink()
+
+
+def _read_systemd_service_exposures(root: Path, etc_root: Path) -> tuple[SystemdServiceExposure, ...]:
+    exposures: list[SystemdServiceExposure] = []
+    seen_services: set[str] = set()
+    for marker in _enabled_systemd_service_markers(etc_root):
+        service_name = marker.name
+        if service_name in seen_services:
+            continue
+        seen_services.add(service_name)
+        unit_text, unit_source = _read_systemd_unit_text(root, etc_root, service_name, marker)
+        if not unit_text:
+            continue
+        bind = _external_service_bind(unit_text)
+        if bind is None:
+            continue
+        exec_start = _first_service_value(unit_text, "ExecStart")
+        exposures.append(
+            SystemdServiceExposure(
+                name=service_name,
+                bind=bind,
+                source=unit_source,
+                enabled_source=str(marker),
+                exec_start=exec_start,
+            )
+        )
+    return tuple(exposures)
+
+
+def _enabled_systemd_service_markers(etc_root: Path) -> tuple[Path, ...]:
+    system_root = etc_root / "systemd" / "system"
+    try:
+        return tuple(
+            sorted(
+                path
+                for path in system_root.glob("*.wants/*.service")
+                if _path_exists_or_symlink(path)
+            )
+        )
+    except OSError:
+        return ()
+
+
+def _read_systemd_unit_text(
+    root: Path,
+    etc_root: Path,
+    service_name: str,
+    marker: Path,
+) -> tuple[str, str]:
+    candidates: list[Path] = []
+    if marker.is_symlink():
+        try:
+            target = marker.readlink()
+        except OSError:
+            target = None
+        if target is not None:
+            if target.is_absolute():
+                candidates.append(root / target.relative_to("/"))
+            else:
+                candidates.append(marker.parent / target)
+    elif marker.is_file():
+        candidates.append(marker)
+
+    candidates.extend(
+        [
+            etc_root / "systemd" / "system" / service_name,
+            root / "usr" / "lib" / "systemd" / "system" / service_name,
+            root / "lib" / "systemd" / "system" / service_name,
+        ]
+    )
+
+    seen: set[Path] = set()
+    for candidate in candidates:
+        if candidate in seen:
+            continue
+        seen.add(candidate)
+        text = read_text(candidate)
+        if text:
+            return text, str(candidate)
+    return "", "not found"
+
+
+def _external_service_bind(unit_text: str) -> Optional[str]:
+    if _first_service_value(unit_text, "Type").lower() == "oneshot":
+        return None
+    for exec_start in _service_values(unit_text, "ExecStart"):
+        bind = _external_bind_from_exec_start(exec_start)
+        if bind is not None:
+            return bind
+    return None
+
+
+_BIND_OPTION_NAMES = {
+    "--addr",
+    "--address",
+    "--bind",
+    "--host",
+    "--listen",
+    "--listen-address",
+    "-b",
+}
+
+_BIND_OPTION_PARTS = ("addr", "address", "bind", "host", "listen")
+_EXTERNAL_BINDS = ("0.0.0.0", "::", "[::]", "*")
+_LOCAL_BINDS = ("127.", "localhost", "::1", "[::1]")
+
+
+def _external_bind_from_exec_start(exec_start: str) -> Optional[str]:
+    try:
+        tokens = shlex.split(exec_start, comments=False, posix=True)
+    except ValueError:
+        tokens = exec_start.split()
+
+    for index, token in enumerate(tokens):
+        option, separator, value = token.partition("=")
+        if separator and _is_bind_option(option):
+            bind = _external_bind_value(value)
+            if bind is not None:
+                return bind
+        if token in _BIND_OPTION_NAMES and index + 1 < len(tokens):
+            bind = _external_bind_value(tokens[index + 1])
+            if bind is not None:
+                return bind
+    return None
+
+
+def _is_bind_option(option: str) -> bool:
+    normalized = option.lower().replace("_", "-")
+    return any(part in normalized for part in _BIND_OPTION_PARTS)
+
+
+def _external_bind_value(value: str) -> Optional[str]:
+    normalized = value.strip().lower()
+    if normalized.startswith(_LOCAL_BINDS):
+        return None
+    for bind in _EXTERNAL_BINDS:
+        if normalized == bind or normalized.startswith(f"{bind}:") or normalized.startswith(f"{bind}/"):
+            return bind
+    if (
+        normalized.startswith("[::]:")
+        or normalized.startswith("http://0.0.0.0")
+        or normalized.startswith("https://0.0.0.0")
+    ):
+        return "0.0.0.0" if "0.0.0.0" in normalized else "[::]"
+    return None
+
+
+def _service_values(unit_text: str, key: str) -> tuple[str, ...]:
+    values: list[str] = []
+    in_service = False
+    for raw_line in unit_text.splitlines():
+        line = raw_line.strip()
+        if not line or line.startswith("#"):
+            continue
+        if line.startswith("[") and line.endswith("]"):
+            in_service = line.lower() == "[service]"
+            continue
+        if not in_service or "=" not in line:
+            continue
+        raw_key, value = line.split("=", 1)
+        if raw_key.strip().lower() == key.lower() and value.strip():
+            values.append(value.strip())
+    return tuple(values)
+
+
+def _first_service_value(unit_text: str, key: str) -> str:
+    values = _service_values(unit_text, key)
+    return values[0] if values else ""

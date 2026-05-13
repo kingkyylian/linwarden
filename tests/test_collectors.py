@@ -124,6 +124,62 @@ class CollectorTests(unittest.TestCase):
         self.assertIsNone(snapshot.firewall_status.enabled)
         self.assertEqual(snapshot.firewall_status.source, str(etc / "nftables.conf"))
 
+    def test_collects_enabled_systemd_service_external_bind_exposure(self) -> None:
+        with TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            etc = root / "etc"
+            unit_dir = root / "usr" / "lib" / "systemd" / "system"
+            wants_dir = etc / "systemd" / "system" / "multi-user.target.wants"
+            unit_dir.mkdir(parents=True)
+            wants_dir.mkdir(parents=True)
+            (etc / "os-release").parent.mkdir(parents=True, exist_ok=True)
+            (etc / "os-release").write_text('ID="debian"\n', encoding="utf-8")
+
+            external_unit = unit_dir / "fixture-api.service"
+            external_unit.write_text(
+                "\n".join(
+                    [
+                        "[Service]",
+                        "ExecStart=/usr/bin/python -m http.server --bind 0.0.0.0 8080",
+                    ]
+                ),
+                encoding="utf-8",
+            )
+            (wants_dir / "fixture-api.service").symlink_to("/usr/lib/systemd/system/fixture-api.service")
+
+            local_unit = unit_dir / "fixture-admin.service"
+            local_unit.write_text(
+                "\n".join(
+                    [
+                        "[Service]",
+                        "ExecStart=/usr/bin/server --listen 127.0.0.1:9000",
+                    ]
+                ),
+                encoding="utf-8",
+            )
+            (wants_dir / "fixture-admin.service").symlink_to("/usr/lib/systemd/system/fixture-admin.service")
+
+            disabled_unit = unit_dir / "fixture-disabled.service"
+            disabled_unit.write_text(
+                "\n".join(
+                    [
+                        "[Service]",
+                        "ExecStart=/usr/bin/server --listen 0.0.0.0:9001",
+                    ]
+                ),
+                encoding="utf-8",
+            )
+
+            snapshot = collect_host_snapshot(root=root, proc_root=root / "proc", etc_root=etc)
+
+        self.assertEqual(len(snapshot.systemd_service_exposures), 1)
+        exposure = snapshot.systemd_service_exposures[0]
+        self.assertEqual(exposure.name, "fixture-api.service")
+        self.assertEqual(exposure.bind, "0.0.0.0")
+        self.assertEqual(exposure.source, str(external_unit))
+        self.assertEqual(exposure.enabled_source, str(wants_dir / "fixture-api.service"))
+        self.assertIn("--bind 0.0.0.0", exposure.exec_start)
+
 
 if __name__ == "__main__":
     unittest.main()

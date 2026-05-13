@@ -42,12 +42,15 @@ The collector reads files that are normally world-readable on Linux hosts:
 - `/etc/ufw/ufw.conf` when present
 - `/etc/firewalld/firewalld.conf` and firewalld systemd enablement markers when present
 - `/etc/nftables.conf` and nftables systemd enablement markers when present
+- enabled systemd service markers under `/etc/systemd/system/*.wants/*.service` and matching unit files when present
 
 SSH collection defaults to static file parsing. When `--sshd-mode effective` is selected, Linwarden executes `sshd -T -f <config>` and records `sshd_source` as `effective`.
 
 When `--sshd-match KEY=VALUE` entries are provided, Linwarden passes them to `sshd -T` through OpenSSH `-C` so `Match` blocks can be evaluated for a specific connection context.
 
 Package manager labels are inferred from `/etc/os-release` `ID` and `ID_LIKE` values, then enriched with rootless update counts when a supported status file is present.
+
+Systemd service exposure detection is static. It follows enabled service markers inside the scanned root and flags common wildcard bind options such as `--bind 0.0.0.0` or `--listen [::]:PORT`; it does not call `systemctl` or inspect live sockets.
 
 Missing files are treated as absent data, not fatal errors. This keeps the CLI usable in containers, rescue mounts, and partial forensic copies.
 

@@ -9,4 +9,5 @@ htmlcov/
 build/
 dist/
 linwarden-report.*
+docs/checkpoints/
 .DS_Store

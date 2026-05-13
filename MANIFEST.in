@@ -7,3 +7,4 @@ recursive-include examples *.json *.md *.sarif
 recursive-include scripts *.py
 recursive-include tests *.py
 recursive-include tests/fixtures *
+recursive-exclude docs/checkpoints *

@@ -48,6 +48,50 @@
           "ruleId": "LNX-SSH-003"
         },
         {
+          "level": "warning",
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "docs/rules.md"
+                }
+              }
+            }
+          ],
+          "message": {
+            "text": "SSH allows too many authentication attempts: MaxAuthTries 6"
+          },
+          "properties": {
+            "category": "ssh",
+            "host": "fixture-box",
+            "remediation": "Set MaxAuthTries 4 or lower in sshd_config and reload sshd.",
+            "severity": "medium"
+          },
+          "ruleId": "LNX-SSH-004"
+        },
+        {
+          "level": "warning",
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "docs/rules.md"
+                }
+              }
+            }
+          ],
+          "message": {
+            "text": "SSH TCP forwarding is broadly enabled: AllowTcpForwarding yes"
+          },
+          "properties": {
+            "category": "ssh",
+            "host": "fixture-box",
+            "remediation": "Set AllowTcpForwarding no unless SSH tunneling is explicitly required for this host.",
+            "severity": "medium"
+          },
+          "ruleId": "LNX-SSH-005"
+        },
+        {
           "level": "error",
           "locations": [
             {
@@ -289,6 +333,46 @@
               },
               "shortDescription": {
                 "text": "SSH permits empty passwords"
+              }
+            },
+            {
+              "fullDescription": {
+                "text": "Allowing many authentication attempts per connection increases exposure to password guessing and noisy credential attacks."
+              },
+              "help": {
+                "text": "Set MaxAuthTries 4 or lower in sshd_config and reload sshd."
+              },
+              "id": "LNX-SSH-004",
+              "name": "SSH allows too many authentication attempts",
+              "properties": {
+                "category": "ssh",
+                "references": [
+                  "man:sshd_config(5)"
+                ],
+                "severity": "medium"
+              },
+              "shortDescription": {
+                "text": "SSH allows too many authentication attempts"
+              }
+            },
+            {
+              "fullDescription": {
+                "text": "SSH users can tunnel arbitrary TCP connections through the host, which may bypass network controls or expose internal services."
+              },
+              "help": {
+                "text": "Set AllowTcpForwarding no unless SSH tunneling is explicitly required for this host."
+              },
+              "id": "LNX-SSH-005",
+              "name": "SSH TCP forwarding is broadly enabled",
+              "properties": {
+                "category": "ssh",
+                "references": [
+                  "man:sshd_config(5)"
+                ],
+                "severity": "medium"
+              },
+              "shortDescription": {
+                "text": "SSH TCP forwarding is broadly enabled"
               }
             },
             {

@@ -3,6 +3,7 @@ from pathlib import Path
 
 ACTION = Path(__file__).resolve().parents[1] / "action.yml"
 DOCS = Path(__file__).resolve().parents[1] / "docs" / "github-actions.md"
+CI_WORKFLOW = Path(__file__).resolve().parents[1] / ".github" / "workflows" / "ci.yml"
 
 
 class ActionMetadataTests(unittest.TestCase):
@@ -61,6 +62,15 @@ class ActionMetadataTests(unittest.TestCase):
                     value.startswith('"') and value.endswith('"'),
                     f"description value with colon must be quoted: {stripped}",
                 )
+
+    def test_ci_exercises_local_composite_action_paths(self) -> None:
+        text = CI_WORKFLOW.read_text(encoding="utf-8")
+
+        self.assertIn("uses: ./", text)
+        self.assertIn("linwarden-action.sarif", text)
+        self.assertIn("linwarden-action.md", text)
+        self.assertIn("upload-sarif:", text)
+        self.assertIn('add-summary: "true"', text)
 
 
 if __name__ == "__main__":

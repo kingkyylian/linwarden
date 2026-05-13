@@ -36,6 +36,20 @@ Linwarden uses static, rootless evidence by default. For SSH, static mode reads 
 - Impact: Accounts with empty passwords can authenticate over SSH without a credential secret.
 - Remediation: Set `PermitEmptyPasswords no` and reload `sshd`.
 
+### LNX-SSH-004: SSH allows too many authentication attempts
+
+- Severity: medium
+- Evidence: `MaxAuthTries` above `4`
+- Impact: High retry counts increase exposure to password guessing and noisy credential attacks.
+- Remediation: Set `MaxAuthTries 4` or lower and reload `sshd`.
+
+### LNX-SSH-005: SSH TCP forwarding is broadly enabled
+
+- Severity: medium
+- Evidence: `AllowTcpForwarding yes` or `all`
+- Impact: SSH users can tunnel TCP connections through the host and potentially bypass network controls.
+- Remediation: Set `AllowTcpForwarding no` unless SSH tunneling is explicitly required.
+
 ## Kernel Rules
 
 ### LNX-KRN-001: Address space layout randomization is disabled

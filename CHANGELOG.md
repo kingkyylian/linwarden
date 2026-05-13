@@ -2,7 +2,7 @@
 
 All notable changes to Linwarden are documented here.
 
-## Unreleased
+## 0.10.0 - 2026-05-13
 
 - Added GitHub artifact attestations for tag release assets.
 

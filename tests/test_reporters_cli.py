@@ -77,7 +77,7 @@ class ReporterAndCliTests(unittest.TestCase):
 
         self.assertNotIn("LNX-SSH-002", {finding["rule_id"] for finding in payload["findings"]})
         self.assertIn("LNX-SSH-002", {finding["rule_id"] for finding in payload["suppressed_findings"]})
-        self.assertEqual(payload["summary"]["total"], 11)
+        self.assertEqual(payload["summary"]["total"], 13)
 
     def test_cli_returns_failure_code_when_threshold_is_met(self) -> None:
         out = StringIO()
@@ -108,7 +108,10 @@ class ReporterAndCliTests(unittest.TestCase):
                 "\n".join(
                     [
                         "#!/bin/sh",
-                        "printf '%s\\n' 'permitrootlogin no' 'passwordauthentication no' 'permitemptypasswords no'",
+                        (
+                            "printf '%s\\n' 'permitrootlogin no' 'passwordauthentication no' "
+                            "'permitemptypasswords no' 'maxauthtries 6' 'allowtcpforwarding yes'"
+                        ),
                     ]
                 ),
                 encoding="utf-8",
@@ -145,6 +148,8 @@ class ReporterAndCliTests(unittest.TestCase):
         self.assertEqual(payload["host"]["sshd_source"], "effective")
         self.assertEqual(payload["host"]["sshd_match_context"], ["user=deploy", "addr=198.51.100.4"])
         self.assertNotIn("LNX-SSH-001", {finding["rule_id"] for finding in payload["findings"]})
+        self.assertIn("LNX-SSH-004", {finding["rule_id"] for finding in payload["findings"]})
+        self.assertIn("LNX-SSH-005", {finding["rule_id"] for finding in payload["findings"]})
 
     def test_cli_applies_config_and_outputs_sarif(self) -> None:
         out = StringIO()

@@ -1,4 +1,5 @@
 import unittest
+from dataclasses import replace
 from pathlib import Path
 
 from linwarden.collectors import collect_host_snapshot
@@ -22,6 +23,10 @@ class RuleTests(unittest.TestCase):
         self.assertIn("PermitRootLogin", by_rule["LNX-SSH-001"].evidence)
         self.assertIn("no", by_rule["LNX-SSH-001"].remediation)
         self.assertEqual(by_rule["LNX-SSH-003"].severity, "high")
+        self.assertEqual(by_rule["LNX-SSH-004"].severity, "medium")
+        self.assertIn("MaxAuthTries 6", by_rule["LNX-SSH-004"].evidence)
+        self.assertEqual(by_rule["LNX-SSH-005"].severity, "medium")
+        self.assertIn("AllowTcpForwarding yes", by_rule["LNX-SSH-005"].evidence)
         self.assertEqual(by_rule["LNX-KRN-001"].severity, "high")
         self.assertEqual(by_rule["LNX-NET-001"].severity, "medium")
         self.assertEqual(by_rule["LNX-NET-002"].severity, "low")
@@ -42,11 +47,22 @@ class RuleTests(unittest.TestCase):
         )
         summary = summarize_findings(evaluate_snapshot(snapshot))
 
-        self.assertEqual(summary.total, 15)
+        self.assertEqual(summary.total, 17)
         self.assertEqual(summary.by_severity["high"], 7)
-        self.assertEqual(summary.by_severity["medium"], 6)
+        self.assertEqual(summary.by_severity["medium"], 8)
         self.assertEqual(summary.by_severity["low"], 2)
         self.assertEqual(summary.score, 0)
+
+    def test_flags_allow_tcp_forwarding_all_as_broad_forwarding(self) -> None:
+        snapshot = collect_host_snapshot(
+            root=FIXTURE_ROOT,
+            proc_root=FIXTURE_ROOT / "proc",
+            etc_root=FIXTURE_ROOT / "etc",
+        )
+        snapshot = replace(snapshot, sshd_options={"allowtcpforwarding": "all"})
+        by_rule = {finding.rule_id: finding for finding in evaluate_snapshot(snapshot)}
+
+        self.assertIn("AllowTcpForwarding all", by_rule["LNX-SSH-005"].evidence)
 
 
 if __name__ == "__main__":

@@ -2,6 +2,12 @@
 
 All notable changes to Linwarden are documented here.
 
+## Unreleased
+
+- Added `LNX-SSH-004` for `MaxAuthTries` values above `4`.
+- Added `LNX-SSH-005` for broadly enabled SSH TCP forwarding.
+- Added CI coverage that runs the local composite GitHub Action through SARIF and Markdown-summary paths.
+
 ## 0.7.0 - 2026-05-12
 
 - Added a composite GitHub Action wrapper for running Linwarden with `uses: kingkyylian/linwarden@v0.7.0`.

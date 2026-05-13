@@ -2,5 +2,6 @@ Port 22
 Include sshd_config.d/*.conf
 PermitRootLogin yes
 PasswordAuthentication yes
+MaxAuthTries 6
 ChallengeResponseAuthentication no
 UsePAM yes

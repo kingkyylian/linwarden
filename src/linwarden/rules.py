@@ -6,6 +6,7 @@ from .models import Finding, FindingSummary, HostSnapshot
 
 SEVERITY_ORDER = {"low": 1, "medium": 2, "high": 3, "critical": 4}
 SCORE_WEIGHTS = {"low": 3, "medium": 10, "high": 20, "critical": 35}
+MAX_AUTH_TRIES_LIMIT = 4
 
 
 def evaluate_snapshot(snapshot: HostSnapshot) -> list[Finding]:
@@ -52,6 +53,48 @@ def evaluate_snapshot(snapshot: HostSnapshot) -> list[Finding]:
                 evidence=f"PermitEmptyPasswords {permit_empty_passwords}",
                 impact="Accounts with empty passwords can authenticate over SSH without a credential secret.",
                 remediation="Set PermitEmptyPasswords no in sshd_config and reload sshd.",
+                references=("man:sshd_config(5)",),
+            )
+        )
+
+    max_auth_tries = _int_or_none(snapshot.sshd_options.get("maxauthtries"))
+    if max_auth_tries is not None and max_auth_tries > MAX_AUTH_TRIES_LIMIT:
+        findings.append(
+            Finding(
+                rule_id="LNX-SSH-004",
+                severity="medium",
+                title="SSH allows too many authentication attempts",
+                category="ssh",
+                evidence=f"MaxAuthTries {max_auth_tries}",
+                impact=(
+                    "Allowing many authentication attempts per connection increases exposure "
+                    "to password guessing and noisy credential attacks."
+                ),
+                remediation=(
+                    f"Set MaxAuthTries {MAX_AUTH_TRIES_LIMIT} or lower in sshd_config "
+                    "and reload sshd."
+                ),
+                references=("man:sshd_config(5)",),
+            )
+        )
+
+    allow_tcp_forwarding = snapshot.sshd_options.get("allowtcpforwarding", "not set").lower()
+    if allow_tcp_forwarding in {"yes", "all"}:
+        findings.append(
+            Finding(
+                rule_id="LNX-SSH-005",
+                severity="medium",
+                title="SSH TCP forwarding is broadly enabled",
+                category="ssh",
+                evidence=f"AllowTcpForwarding {allow_tcp_forwarding}",
+                impact=(
+                    "SSH users can tunnel arbitrary TCP connections through the host, "
+                    "which may bypass network controls or expose internal services."
+                ),
+                remediation=(
+                    "Set AllowTcpForwarding no unless SSH tunneling is explicitly required "
+                    "for this host."
+                ),
                 references=("man:sshd_config(5)",),
             )
         )

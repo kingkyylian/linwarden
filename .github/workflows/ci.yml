@@ -55,3 +55,36 @@ jobs:
         uses: github/codeql-action/upload-sarif@v4
         with:
           sarif_file: linwarden.sarif
+
+  action-smoke:
+    name: Composite action
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Run local action with SARIF output
+        uses: ./
+        with:
+          root: tests/fixtures/linux-root
+          format: sarif
+          output: linwarden-action.sarif
+          fail-on: critical
+          upload-sarif: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+          python-version: "3.13"
+
+      - name: Validate local action SARIF JSON
+        run: python -m json.tool linwarden-action.sarif > /dev/null
+
+      - name: Run local action with Markdown summary
+        uses: ./
+        with:
+          root: tests/fixtures/linux-root
+          format: markdown
+          output: linwarden-action.md
+          fail-on: off
+          add-summary: "true"
+          python-version: "3.13"
+
+      - name: Verify Markdown report exists
+        run: test -s linwarden-action.md

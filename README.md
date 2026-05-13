@@ -138,6 +138,8 @@ Suppressed findings remain visible in JSON and Markdown reports. SARIF output in
 | `LNX-SSH-001` | high | SSH | `PermitRootLogin yes` is enabled. |
 | `LNX-SSH-002` | medium | SSH | `PasswordAuthentication yes` is enabled. |
 | `LNX-SSH-003` | high | SSH | `PermitEmptyPasswords yes` is enabled. |
+| `LNX-SSH-004` | medium | SSH | `MaxAuthTries` is above `4`. |
+| `LNX-SSH-005` | medium | SSH | `AllowTcpForwarding yes` or `all` is enabled. |
 | `LNX-KRN-001` | high | Kernel | `kernel.randomize_va_space=0` disables ASLR. |
 | `LNX-KRN-002` | high | Kernel | `vm.mmap_min_addr` is below `65536`. |
 | `LNX-KRN-003` | medium | Kernel | `kernel.kptr_restrict=0` exposes kernel pointers. |

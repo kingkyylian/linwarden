@@ -4,7 +4,7 @@
 - OS: `Debian GNU/Linux 12 (bookworm)`
 - Kernel: `6.8.7-fixture`
 - Score: `0/100`
-- Findings: `15`
+- Findings: `17`
 
 ## Findings
 
@@ -13,6 +13,8 @@
 | HIGH | LNX-SSH-001 | SSH root login is permitted | PermitRootLogin yes |
 | MEDIUM | LNX-SSH-002 | SSH password authentication is enabled | PasswordAuthentication yes |
 | HIGH | LNX-SSH-003 | SSH permits empty passwords | PermitEmptyPasswords yes |
+| MEDIUM | LNX-SSH-004 | SSH allows too many authentication attempts | MaxAuthTries 6 |
+| MEDIUM | LNX-SSH-005 | SSH TCP forwarding is broadly enabled | AllowTcpForwarding yes |
 | HIGH | LNX-KRN-001 | Address space layout randomization is disabled | kernel.randomize_va_space=0 |
 | MEDIUM | LNX-NET-001 | IPv4 forwarding is enabled | net.ipv4.ip_forward=1 |
 | LOW | LNX-NET-002 | IPv4 ICMP redirects are accepted | net.ipv4.conf.all.accept_redirects=1 |
@@ -45,6 +47,18 @@ Fix: Prefer key-based SSH and set PasswordAuthentication no after confirming acc
 Impact: Accounts with empty passwords can authenticate over SSH without a credential secret.
 
 Fix: Set PermitEmptyPasswords no in sshd_config and reload sshd.
+
+### LNX-SSH-004: SSH allows too many authentication attempts
+
+Impact: Allowing many authentication attempts per connection increases exposure to password guessing and noisy credential attacks.
+
+Fix: Set MaxAuthTries 4 or lower in sshd_config and reload sshd.
+
+### LNX-SSH-005: SSH TCP forwarding is broadly enabled
+
+Impact: SSH users can tunnel arbitrary TCP connections through the host, which may bypass network controls or expose internal services.
+
+Fix: Set AllowTcpForwarding no unless SSH tunneling is explicitly required for this host.
 
 ### LNX-KRN-001: Address space layout randomization is disabled
 

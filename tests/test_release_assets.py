@@ -5,6 +5,8 @@ from tempfile import TemporaryDirectory
 
 from scripts.release_assets import write_sha256sums
 
+ROOT = Path(__file__).resolve().parents[1]
+
 
 class ReleaseAssetTests(unittest.TestCase):
     def test_writes_stable_sha256_manifest_for_dist_files(self) -> None:
@@ -28,6 +30,11 @@ class ReleaseAssetTests(unittest.TestCase):
                     ]
                 ),
             )
+
+    def test_source_distribution_excludes_local_checkpoints(self) -> None:
+        manifest = (ROOT / "MANIFEST.in").read_text(encoding="utf-8")
+
+        self.assertIn("recursive-exclude docs/checkpoints *", manifest)
 
 
 if __name__ == "__main__":

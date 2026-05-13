@@ -37,6 +37,30 @@
       "title": "SSH permits empty passwords"
     },
     {
+      "category": "ssh",
+      "evidence": "MaxAuthTries 6",
+      "impact": "Allowing many authentication attempts per connection increases exposure to password guessing and noisy credential attacks.",
+      "references": [
+        "man:sshd_config(5)"
+      ],
+      "remediation": "Set MaxAuthTries 4 or lower in sshd_config and reload sshd.",
+      "rule_id": "LNX-SSH-004",
+      "severity": "medium",
+      "title": "SSH allows too many authentication attempts"
+    },
+    {
+      "category": "ssh",
+      "evidence": "AllowTcpForwarding yes",
+      "impact": "SSH users can tunnel arbitrary TCP connections through the host, which may bypass network controls or expose internal services.",
+      "references": [
+        "man:sshd_config(5)"
+      ],
+      "remediation": "Set AllowTcpForwarding no unless SSH tunneling is explicitly required for this host.",
+      "rule_id": "LNX-SSH-005",
+      "severity": "medium",
+      "title": "SSH TCP forwarding is broadly enabled"
+    },
+    {
       "category": "kernel",
       "evidence": "kernel.randomize_va_space=0",
       "impact": "Memory corruption exploits become easier when process address layouts are predictable.",
@@ -281,10 +305,10 @@
       "critical": 0,
       "high": 7,
       "low": 2,
-      "medium": 6
+      "medium": 8
     },
     "score": 0,
-    "total": 15
+    "total": 17
   },
   "suppressed_findings": []
 }

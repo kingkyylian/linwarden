@@ -45,6 +45,15 @@ class FirewallStatus:
 
 
 @dataclass(frozen=True)
+class SystemdServiceExposure:
+    name: str
+    bind: str
+    source: str
+    enabled_source: str
+    exec_start: str
+
+
+@dataclass(frozen=True)
 class HostSnapshot:
     hostname: str
     os_release: dict[str, str]
@@ -59,6 +68,7 @@ class HostSnapshot:
     sshd_match_context: tuple[str, ...]
     package_status: PackageStatus
     firewall_status: FirewallStatus
+    systemd_service_exposures: tuple[SystemdServiceExposure, ...]
 
 
 @dataclass(frozen=True)

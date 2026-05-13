@@ -152,3 +152,14 @@ Linwarden uses static, rootless evidence by default. For SSH, static mode reads 
 - Remediation: Enable the host firewall or document why perimeter controls are sufficient.
 
 Linwarden currently reads UFW config state directly and infers firewalld or nftables enablement from systemd enablement markers when present. A provider config file without a service marker is reported as unknown enabled state, not as disabled.
+
+## Service Rules
+
+### LNX-SVC-001: Enabled service appears externally bound
+
+- Severity: medium
+- Evidence: enabled systemd service name and wildcard bind address from `ExecStart`.
+- Impact: The service may accept connections from non-local interfaces when network policy allows it.
+- Remediation: Review whether external listening is required; bind to `127.0.0.1` or `::1` when only local access is needed.
+
+Linwarden follows enabled service markers under `/etc/systemd/system/*.wants/*.service` inside the scanned root. Detection is static and intentionally conservative: it looks for common bind/listen options that carry wildcard addresses such as `0.0.0.0` or `[::]`. It does not call `systemctl` or inspect live sockets.

@@ -1,6 +1,7 @@
 import unittest
 from dataclasses import replace
 from pathlib import Path
+from tempfile import TemporaryDirectory
 
 from linwarden.collectors import collect_host_snapshot
 from linwarden.rules import evaluate_snapshot, summarize_findings
@@ -63,6 +64,37 @@ class RuleTests(unittest.TestCase):
         by_rule = {finding.rule_id: finding for finding in evaluate_snapshot(snapshot)}
 
         self.assertIn("AllowTcpForwarding all", by_rule["LNX-SSH-005"].evidence)
+
+    def test_flags_enabled_systemd_service_with_external_bind(self) -> None:
+        with TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            etc = root / "etc"
+            unit_dir = root / "usr" / "lib" / "systemd" / "system"
+            wants_dir = etc / "systemd" / "system" / "multi-user.target.wants"
+            unit_dir.mkdir(parents=True)
+            wants_dir.mkdir(parents=True)
+            (etc / "os-release").parent.mkdir(parents=True, exist_ok=True)
+            (etc / "os-release").write_text('ID="debian"\n', encoding="utf-8")
+            unit = unit_dir / "fixture-api.service"
+            unit.write_text(
+                "\n".join(
+                    [
+                        "[Service]",
+                        "ExecStart=/usr/bin/python -m http.server --bind 0.0.0.0 8080",
+                    ]
+                ),
+                encoding="utf-8",
+            )
+            (wants_dir / "fixture-api.service").symlink_to("/usr/lib/systemd/system/fixture-api.service")
+
+            snapshot = collect_host_snapshot(root=root, proc_root=root / "proc", etc_root=etc)
+
+        by_rule = {finding.rule_id: finding for finding in evaluate_snapshot(snapshot)}
+
+        self.assertEqual(by_rule["LNX-SVC-001"].severity, "medium")
+        self.assertIn("fixture-api.service", by_rule["LNX-SVC-001"].evidence)
+        self.assertIn("0.0.0.0", by_rule["LNX-SVC-001"].evidence)
+        self.assertIn("review", by_rule["LNX-SVC-001"].remediation.lower())
 
 
 if __name__ == "__main__":

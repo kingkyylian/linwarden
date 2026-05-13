@@ -2,6 +2,12 @@
 
 All notable changes to Linwarden are documented here.
 
+## Unreleased
+
+- Added rootless detection for enabled systemd services that appear externally bound.
+- Added `LNX-SVC-001` for enabled systemd service wildcard binds.
+- Expanded JSON host metadata and bumped report schema to `1.5`.
+
 ## 0.10.1 - 2026-05-13
 
 - Fixed artifact attestation verification docs to verify release files one at a time.

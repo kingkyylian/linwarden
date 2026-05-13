@@ -34,6 +34,45 @@ jobs:
           upload-sarif: "true"
 ```
 
+## Unpacked Container Root
+
+Use this pattern when CI builds or pulls a container image and you want Linwarden to inspect the unpacked filesystem without running inside the container.
+
+```yaml
+name: Linwarden container root
+
+on:
+  pull_request:
+
+permissions:
+  contents: read
+  security-events: write
+
+jobs:
+  scan-container-root:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Export image root
+        run: |
+          set -euo pipefail
+          docker pull debian:bookworm-slim
+          image_id="$(docker create debian:bookworm-slim)"
+          mkdir -p container-root
+          docker export "$image_id" | tar -xf - -C container-root
+          docker rm "$image_id"
+
+      - name: Run Linwarden
+        uses: kingkyylian/linwarden@v0.8.0
+        with:
+          root: container-root
+          format: sarif
+          fail-on: high
+          upload-sarif: "true"
+```
+
 ## Markdown Job Summary
 
 Use this workflow for operators who want the report directly in the Actions run.

@@ -6,9 +6,7 @@ These are scoped issues that help Linwarden become more useful without changing 
 
 | Issue | Area | Idea | Acceptance criteria |
 | --- | --- | --- | --- |
-| [#1](https://github.com/kingkyylian/linwarden/issues/1) | Docs | Add a real-world GitHub Actions example for scanning an unpacked container root. | New docs section with copy-paste workflow. |
-| [#2](https://github.com/kingkyylian/linwarden/issues/2) | Fixtures | Add richer Fedora root fixture data for firewalld and DNF metadata. | Collector tests cover provider and package metadata behavior. |
-| [#4](https://github.com/kingkyylian/linwarden/issues/4) | Fixtures | Add richer Arch root fixture data for Pacman metadata. | Distro fixture test validates metadata source selection. |
+| - | - | No good first issues are currently queued. | Add new scoped items as issues before listing them here. |
 
 ## Larger Tasks
 

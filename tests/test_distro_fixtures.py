@@ -61,6 +61,25 @@ class DistroFixtureTests(unittest.TestCase):
         self.assertEqual(snapshot.package_status.metadata_source, str(stamp))
         self.assertEqual(findings["LNX-PKG-003"].severity, "medium")
 
+    def test_fedora_fixture_covers_firewalld_and_dnf_metadata(self) -> None:
+        root = FIXTURE_DIR / "fedora-root"
+        snapshot = collect_host_snapshot(root=root, proc_root=root / "proc", etc_root=root / "etc")
+
+        self.assertEqual(snapshot.package_status.manager, "dnf")
+        self.assertIsNotNone(snapshot.package_status.metadata_age_days)
+        self.assertIn("var/cache/dnf", snapshot.package_status.metadata_source)
+        self.assertEqual(snapshot.firewall_status.provider, "firewalld")
+        self.assertEqual(snapshot.firewall_status.enabled, True)
+        self.assertIn("firewalld.service", snapshot.firewall_status.source)
+
+    def test_arch_fixture_covers_pacman_metadata(self) -> None:
+        root = FIXTURE_DIR / "arch-root"
+        snapshot = collect_host_snapshot(root=root, proc_root=root / "proc", etc_root=root / "etc")
+
+        self.assertEqual(snapshot.package_status.manager, "pacman")
+        self.assertIsNotNone(snapshot.package_status.metadata_age_days)
+        self.assertTrue(snapshot.package_status.metadata_source.endswith(".db"))
+
 
 if __name__ == "__main__":
     unittest.main()

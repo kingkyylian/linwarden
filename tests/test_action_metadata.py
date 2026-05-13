@@ -42,6 +42,14 @@ class ActionMetadataTests(unittest.TestCase):
         self.assertIn("upload-sarif: \"true\"", text)
         self.assertIn("add-summary: \"true\"", text)
 
+    def test_github_actions_docs_cover_unpacked_container_roots(self) -> None:
+        text = DOCS.read_text(encoding="utf-8")
+
+        self.assertIn("## Unpacked Container Root", text)
+        self.assertIn("docker export", text)
+        self.assertIn("tar -xf", text)
+        self.assertIn("root: container-root", text)
+
     def test_action_uses_safe_output_expression_syntax(self) -> None:
         text = ACTION.read_text(encoding="utf-8")
 

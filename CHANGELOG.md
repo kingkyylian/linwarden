@@ -2,6 +2,12 @@
 
 All notable changes to Linwarden are documented here.
 
+## Unreleased
+
+- Added a GitHub Actions example for scanning an unpacked container root.
+- Added richer Fedora fixture coverage for firewalld and DNF metadata.
+- Added richer Arch fixture coverage for Pacman metadata.
+
 ## 0.8.0 - 2026-05-13
 
 - Added `LNX-SSH-004` for `MaxAuthTries` values above `4`.

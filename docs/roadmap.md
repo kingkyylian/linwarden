@@ -11,7 +11,6 @@
 
 - Systemd unit exposure checks.
 - Container runtime posture checks.
-- Sigstore or GitHub artifact attestation support in addition to GPG checksum signatures.
 
 ## Non-Goals
 

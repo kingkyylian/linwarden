@@ -23,10 +23,12 @@ class ReporterAndCliTests(unittest.TestCase):
         )
         payload = json.loads(render_json(snapshot, evaluate_snapshot(snapshot)))
 
-        self.assertEqual(payload["schema_version"], "1.5")
+        self.assertEqual(payload["schema_version"], "1.6")
         self.assertEqual(payload["host"]["hostname"], "fixture-box")
         self.assertEqual(payload["host"]["sshd_match_context"], [])
         self.assertEqual(payload["host"]["package_status"]["metadata_source"], "not found")
+        self.assertEqual(payload["host"]["bridge_interfaces"], [])
+        self.assertEqual(payload["host"]["package_vulnerabilities"], [])
         self.assertEqual(payload["host"]["systemd_service_exposures"], [])
         self.assertEqual(payload["summary"]["score"], 0)
         self.assertEqual(payload["findings"][0]["rule_id"], "LNX-SSH-001")
@@ -152,6 +154,56 @@ class ReporterAndCliTests(unittest.TestCase):
         self.assertIn("LNX-SSH-004", {finding["rule_id"] for finding in payload["findings"]})
         self.assertIn("LNX-SSH-005", {finding["rule_id"] for finding in payload["findings"]})
 
+    def test_cli_accepts_local_package_vulnerability_feed(self) -> None:
+        out = StringIO()
+        err = StringIO()
+        feed = Path(__file__).parent / "fixtures" / "vulnerability-feed.json"
+
+        exit_code = main(
+            [
+                "scan",
+                "--root",
+                str(FIXTURE_ROOT),
+                "--vulnerability-feed",
+                str(feed),
+                "--format",
+                "json",
+                "--fail-on",
+                "critical",
+            ],
+            stdout=out,
+            stderr=err,
+        )
+
+        payload = json.loads(out.getvalue())
+        self.assertEqual(exit_code, 2)
+        self.assertEqual(err.getvalue(), "")
+        self.assertEqual(len(payload["host"]["package_vulnerabilities"]), 2)
+        self.assertIn("LNX-PKG-004", {finding["rule_id"] for finding in payload["findings"]})
+
+    def test_cli_rejects_invalid_local_package_vulnerability_feed(self) -> None:
+        out = StringIO()
+        err = StringIO()
+        feed = Path(__file__).parent / "fixtures" / "invalid-vulnerability-feed.json"
+
+        exit_code = main(
+            [
+                "scan",
+                "--root",
+                str(FIXTURE_ROOT),
+                "--vulnerability-feed",
+                str(feed),
+                "--format",
+                "json",
+            ],
+            stdout=out,
+            stderr=err,
+        )
+
+        self.assertEqual(exit_code, 1)
+        self.assertEqual(out.getvalue(), "")
+        self.assertIn("vulnerability feed", err.getvalue())
+
     def test_cli_applies_config_and_outputs_sarif(self) -> None:
         out = StringIO()
         err = StringIO()
@@ -180,6 +232,13 @@ class ReporterAndCliTests(unittest.TestCase):
             "LNX-SSH-002",
             {result["ruleId"] for result in payload["runs"][0]["results"]},
         )
+
+    def test_vulnerability_feed_contract_is_documented(self) -> None:
+        text = Path("docs/package-vulnerability-feed.md").read_text(encoding="utf-8")
+
+        self.assertIn('"version": 1', text)
+        self.assertIn('"vulnerabilities"', text)
+        self.assertIn("--vulnerability-feed", text)
 
 
 if __name__ == "__main__":

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import platform
 import shlex
 import socket
@@ -8,7 +9,14 @@ import time
 from pathlib import Path
 from typing import Optional, Sequence, Union
 
-from .models import FirewallStatus, HostSnapshot, PackageStatus, SystemdServiceExposure
+from .models import (
+    BridgeInterface,
+    FirewallStatus,
+    HostSnapshot,
+    PackageStatus,
+    PackageVulnerability,
+    SystemdServiceExposure,
+)
 from .parsers import (
     parse_loadavg,
     parse_meminfo,
@@ -48,6 +56,18 @@ SYSCTL_PATHS = {
         "all",
         "accept_redirects",
     ),
+    "net.bridge.bridge-nf-call-iptables": (
+        "sys",
+        "net",
+        "bridge",
+        "bridge-nf-call-iptables",
+    ),
+    "net.bridge.bridge-nf-call-ip6tables": (
+        "sys",
+        "net",
+        "bridge",
+        "bridge-nf-call-ip6tables",
+    ),
     "vm.mmap_min_addr": ("sys", "vm", "mmap_min_addr"),
 }
 
@@ -59,10 +79,13 @@ def collect_host_snapshot(
     sshd_mode: str = "static",
     sshd_binary: Union[Path, str] = "sshd",
     sshd_match_context: Sequence[str] = (),
+    sys_root: Optional[Union[Path, str]] = None,
+    vulnerability_feed: Optional[Union[Path, str]] = None,
 ) -> HostSnapshot:
     root_path = Path(root)
     proc_path = Path(proc_root) if proc_root is not None else root_path / "proc"
     etc_path = Path(etc_root) if etc_root is not None else root_path / "etc"
+    sys_path = Path(sys_root) if sys_root is not None else root_path / "sys"
 
     hostname = read_text(etc_path / "hostname", socket.gethostname()) or socket.gethostname()
     os_release = parse_os_release(etc_path / "os-release")
@@ -85,7 +108,9 @@ def collect_host_snapshot(
         sshd_match_context=sshd_context,
         package_status=_read_package_status(root_path, os_release),
         firewall_status=_read_firewall_status(etc_path),
+        bridge_interfaces=_read_bridge_interfaces(sys_path, proc_path),
         systemd_service_exposures=_read_systemd_service_exposures(root_path, etc_path),
+        package_vulnerabilities=_read_package_vulnerabilities(vulnerability_feed),
     )
 
 
@@ -279,6 +304,51 @@ def _read_firewall_status(etc_root: Path) -> FirewallStatus:
     return FirewallStatus(provider="unknown", enabled=None, source="not found")
 
 
+def _read_bridge_interfaces(sys_root: Path, proc_root: Path) -> tuple[BridgeInterface, ...]:
+    net_root = sys_root / "class" / "net"
+    try:
+        candidates = sorted(net_root.iterdir(), key=lambda path: path.name)
+    except OSError:
+        return ()
+
+    bridges: list[BridgeInterface] = []
+    for interface in candidates:
+        bridge_source = interface / "bridge"
+        if not bridge_source.exists():
+            continue
+        bridges.append(
+            BridgeInterface(
+                name=interface.name,
+                members=_read_bridge_members(interface),
+                ipv4_forwarding=_read_sysctl_bool(
+                    proc_root / "sys" / "net" / "ipv4" / "conf" / interface.name / "forwarding"
+                ),
+                ipv6_forwarding=_read_sysctl_bool(
+                    proc_root / "sys" / "net" / "ipv6" / "conf" / interface.name / "forwarding"
+                ),
+                source=str(bridge_source),
+            )
+        )
+    return tuple(bridges)
+
+
+def _read_bridge_members(interface: Path) -> tuple[str, ...]:
+    brif = interface / "brif"
+    try:
+        return tuple(sorted(path.name for path in brif.iterdir() if _path_exists_or_symlink(path)))
+    except OSError:
+        return ()
+
+
+def _read_sysctl_bool(path: Path) -> Optional[bool]:
+    value = read_text(path)
+    if value == "1":
+        return True
+    if value == "0":
+        return False
+    return None
+
+
 def _systemd_wants_marker(etc_root: Path, service_name: str) -> Path:
     return etc_root / "systemd" / "system" / "multi-user.target.wants" / service_name
 
@@ -453,3 +523,76 @@ def _service_values(unit_text: str, key: str) -> tuple[str, ...]:
 def _first_service_value(unit_text: str, key: str) -> str:
     values = _service_values(unit_text, key)
     return values[0] if values else ""
+
+
+def _read_package_vulnerabilities(
+    vulnerability_feed: Optional[Union[Path, str]],
+) -> tuple[PackageVulnerability, ...]:
+    if vulnerability_feed is None:
+        return ()
+
+    feed_path = Path(vulnerability_feed)
+    try:
+        payload = json.loads(feed_path.read_text(encoding="utf-8"))
+    except OSError as exc:
+        raise ValueError(f"vulnerability feed {feed_path}: {exc}") from exc
+    except json.JSONDecodeError as exc:
+        raise ValueError(f"vulnerability feed {feed_path}: invalid JSON at line {exc.lineno}") from exc
+
+    if not isinstance(payload, dict):
+        raise ValueError(f"vulnerability feed {feed_path}: root must be an object")
+    if payload.get("version") != 1:
+        raise ValueError(f"vulnerability feed {feed_path}: version must be 1")
+
+    entries = payload.get("vulnerabilities")
+    if not isinstance(entries, list):
+        raise ValueError(f"vulnerability feed {feed_path}: vulnerabilities must be an array")
+
+    vulnerabilities: list[PackageVulnerability] = []
+    for index, entry in enumerate(entries):
+        if not isinstance(entry, dict):
+            raise ValueError(f"vulnerability feed {feed_path}: vulnerabilities[{index}] must be an object")
+        vulnerabilities.append(_package_vulnerability_from_entry(feed_path, index, entry))
+    return tuple(vulnerabilities)
+
+
+_VULNERABILITY_SEVERITIES = {"critical", "high", "medium", "low"}
+
+
+def _package_vulnerability_from_entry(
+    feed_path: Path,
+    index: int,
+    entry: dict[str, object],
+) -> PackageVulnerability:
+    severity = _required_feed_string(feed_path, index, entry, "severity").lower()
+    if severity not in _VULNERABILITY_SEVERITIES:
+        raise ValueError(
+            f"vulnerability feed {feed_path}: vulnerabilities[{index}].severity must be critical, high, medium, or low"
+        )
+
+    return PackageVulnerability(
+        package=_required_feed_string(feed_path, index, entry, "package"),
+        installed_version=_required_feed_string(feed_path, index, entry, "installed_version"),
+        fixed_version=_required_feed_string(feed_path, index, entry, "fixed_version"),
+        vulnerability_id=_required_feed_string(feed_path, index, entry, "id"),
+        severity=severity,
+        summary=_optional_feed_string(feed_path, index, entry, "summary"),
+        url=_optional_feed_string(feed_path, index, entry, "url"),
+        source=str(feed_path),
+    )
+
+
+def _required_feed_string(feed_path: Path, index: int, entry: dict[str, object], key: str) -> str:
+    value = entry.get(key)
+    if not isinstance(value, str) or not value.strip():
+        raise ValueError(f"vulnerability feed {feed_path}: vulnerabilities[{index}].{key} must be a non-empty string")
+    return value.strip()
+
+
+def _optional_feed_string(feed_path: Path, index: int, entry: dict[str, object], key: str) -> str:
+    value = entry.get(key, "")
+    if value is None:
+        return ""
+    if not isinstance(value, str):
+        raise ValueError(f"vulnerability feed {feed_path}: vulnerabilities[{index}].{key} must be a string")
+    return value.strip()

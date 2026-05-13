@@ -180,6 +180,86 @@ class CollectorTests(unittest.TestCase):
         self.assertEqual(exposure.enabled_source, str(wants_dir / "fixture-api.service"))
         self.assertIn("--bind 0.0.0.0", exposure.exec_start)
 
+    def test_collects_bridge_interfaces_and_forwarding_posture(self) -> None:
+        with TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            etc = root / "etc"
+            proc = root / "proc"
+            bridge = root / "sys" / "class" / "net" / "docker0"
+            (etc).mkdir(parents=True)
+            (proc / "sys" / "net" / "bridge").mkdir(parents=True)
+            (proc / "sys" / "net" / "ipv4" / "conf" / "docker0").mkdir(parents=True)
+            (proc / "sys" / "net" / "ipv6" / "conf" / "docker0").mkdir(parents=True)
+            (bridge / "bridge").mkdir(parents=True)
+            (bridge / "brif" / "veth123").mkdir(parents=True)
+            (etc / "os-release").write_text('ID="debian"\n', encoding="utf-8")
+            (proc / "sys" / "net" / "bridge" / "bridge-nf-call-iptables").write_text("0\n", encoding="utf-8")
+            (proc / "sys" / "net" / "bridge" / "bridge-nf-call-ip6tables").write_text("1\n", encoding="utf-8")
+            (proc / "sys" / "net" / "ipv4" / "conf" / "docker0" / "forwarding").write_text("1\n", encoding="utf-8")
+            (proc / "sys" / "net" / "ipv6" / "conf" / "docker0" / "forwarding").write_text("0\n", encoding="utf-8")
+
+            snapshot = collect_host_snapshot(root=root, proc_root=proc, etc_root=etc)
+
+        self.assertEqual(snapshot.sysctls["net.bridge.bridge-nf-call-iptables"], "0")
+        self.assertEqual(snapshot.sysctls["net.bridge.bridge-nf-call-ip6tables"], "1")
+        self.assertEqual(len(snapshot.bridge_interfaces), 1)
+        bridge_interface = snapshot.bridge_interfaces[0]
+        self.assertEqual(bridge_interface.name, "docker0")
+        self.assertEqual(bridge_interface.members, ("veth123",))
+        self.assertEqual(bridge_interface.ipv4_forwarding, True)
+        self.assertEqual(bridge_interface.ipv6_forwarding, False)
+        self.assertEqual(bridge_interface.source, str(bridge / "bridge"))
+
+    def test_collects_bridge_interfaces_from_explicit_sys_root(self) -> None:
+        with TemporaryDirectory() as temp_dir:
+            base = Path(temp_dir)
+            root = base / "root"
+            etc = base / "etc"
+            proc = base / "proc"
+            sys_root = base / "sys-root"
+            bridge = sys_root / "class" / "net" / "br0"
+            etc.mkdir(parents=True)
+            (proc / "sys" / "net" / "ipv4" / "conf" / "br0").mkdir(parents=True)
+            (bridge / "bridge").mkdir(parents=True)
+            (etc / "os-release").write_text('ID="debian"\n', encoding="utf-8")
+            (proc / "sys" / "net" / "ipv4" / "conf" / "br0" / "forwarding").write_text("1\n", encoding="utf-8")
+
+            snapshot = collect_host_snapshot(root=root, proc_root=proc, etc_root=etc, sys_root=sys_root)
+
+        self.assertEqual(len(snapshot.bridge_interfaces), 1)
+        self.assertEqual(snapshot.bridge_interfaces[0].name, "br0")
+        self.assertEqual(snapshot.bridge_interfaces[0].source, str(bridge / "bridge"))
+
+    def test_collects_package_vulnerabilities_from_local_feed(self) -> None:
+        feed = Path(__file__).parent / "fixtures" / "vulnerability-feed.json"
+
+        snapshot = collect_host_snapshot(
+            root=FIXTURE_ROOT,
+            proc_root=FIXTURE_ROOT / "proc",
+            etc_root=FIXTURE_ROOT / "etc",
+            vulnerability_feed=feed,
+        )
+
+        self.assertEqual(len(snapshot.package_vulnerabilities), 2)
+        vulnerability = snapshot.package_vulnerabilities[0]
+        self.assertEqual(vulnerability.package, "openssl")
+        self.assertEqual(vulnerability.installed_version, "3.0.2-0ubuntu1")
+        self.assertEqual(vulnerability.fixed_version, "3.0.2-0ubuntu1.20")
+        self.assertEqual(vulnerability.vulnerability_id, "CVE-2026-0001")
+        self.assertEqual(vulnerability.severity, "critical")
+        self.assertEqual(vulnerability.source, str(feed))
+
+    def test_rejects_invalid_package_vulnerability_feed(self) -> None:
+        feed = Path(__file__).parent / "fixtures" / "invalid-vulnerability-feed.json"
+
+        with self.assertRaisesRegex(ValueError, "vulnerability feed"):
+            collect_host_snapshot(
+                root=FIXTURE_ROOT,
+                proc_root=FIXTURE_ROOT / "proc",
+                etc_root=FIXTURE_ROOT / "etc",
+                vulnerability_feed=feed,
+            )
+
 
 if __name__ == "__main__":
     unittest.main()

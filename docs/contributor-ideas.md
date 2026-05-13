@@ -12,8 +12,7 @@ These are scoped issues that help Linwarden become more useful without changing 
 
 | Issue | Area | Idea | Acceptance criteria |
 | --- | --- | --- | --- |
-| [#6](https://github.com/kingkyylian/linwarden/issues/6) | Networking | Add bridge and forwarding posture checks for container hosts. | Works from procfs/sysfs-style fixtures. |
-| [#7](https://github.com/kingkyylian/linwarden/issues/7) | Packages | Add optional package vulnerability feed ingestion from a local file. | No network call; documented JSON input contract. |
+| - | - | No larger tasks are currently queued. | Add new scoped items as issues before listing them here. |
 
 ## Rule Quality Bar
 

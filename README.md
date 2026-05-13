@@ -32,6 +32,8 @@ Linwarden is not a CIS or STIG replacement. It is the lightweight first pass tha
 - Optional effective OpenSSH config collection through `sshd -T`, including Match context.
 - Package update and host firewall posture signals where rootless files expose them.
 - Package metadata freshness checks for common package manager cache markers.
+- Bridge interface and bridge firewall hook posture checks for container hosts.
+- Optional package vulnerability findings from a local JSON feed.
 - Release checksum manifests with optional detached GPG signatures.
 - Severity scoring with `critical`, `high`, `medium`, and `low` buckets.
 - CI-friendly exit thresholds through `--fail-on`.
@@ -75,8 +77,9 @@ Exit code `2` means at least one finding matched the selected threshold.
 ## CLI
 
 ```text
-linwarden scan [--root PATH] [--proc-root PATH] [--etc-root PATH]
+linwarden scan [--root PATH] [--proc-root PATH] [--etc-root PATH] [--sys-root PATH]
                [--config PATH] [--format markdown|json|sarif]
+               [--vulnerability-feed PATH]
                [--sshd-mode static|effective|auto] [--sshd-binary PATH]
                [--sshd-match KEY=VALUE]
                [--output PATH]
@@ -92,7 +95,8 @@ linwarden scan --config linwarden.json --format sarif --output linwarden.sarif
 linwarden scan --sshd-mode effective --format json
 linwarden scan --sshd-mode effective --sshd-match user=deploy --sshd-match addr=203.0.113.10
 linwarden scan --root /mnt/server-image --format json
-linwarden scan --proc-root /host/proc --etc-root /host/etc --format markdown
+linwarden scan --proc-root /host/proc --etc-root /host/etc --sys-root /host/sys --format markdown
+linwarden scan --vulnerability-feed ./linwarden-vulnerabilities.json --format sarif
 ```
 
 ## Configuration
@@ -149,9 +153,13 @@ Suppressed findings remain visible in JSON and Markdown reports. SARIF output in
 | `LNX-NET-002` | low | Network | `net.ipv4.conf.all.accept_redirects=1` is enabled. |
 | `LNX-NET-003` | medium | Network | `net.ipv6.conf.all.forwarding=1` is enabled. |
 | `LNX-NET-004` | low | Network | `net.ipv6.conf.all.accept_redirects=1` is enabled. |
+| `LNX-NET-005` | medium | Network | Bridge IPv4 firewall hooks are disabled while bridge interfaces exist. |
+| `LNX-NET-006` | medium | Network | Bridge IPv6 firewall hooks are disabled while bridge interfaces exist. |
+| `LNX-NET-007` | medium | Network | A bridge interface has forwarding enabled. |
 | `LNX-PKG-001` | medium | Packages | Package updates are available. |
 | `LNX-PKG-002` | high | Packages | Security package updates are available. |
 | `LNX-PKG-003` | medium | Packages | Package metadata is stale. |
+| `LNX-PKG-004` | feed severity | Packages | A local vulnerability feed reports an affected package. |
 | `LNX-FW-001` | medium | Firewall | A known host firewall is disabled. |
 | `LNX-SVC-001` | medium | Services | An enabled systemd service appears externally bound. |
 
@@ -221,6 +229,8 @@ Linwarden is read-only by default. It does not modify host state, load kernel mo
 - Static SSH mode reads `sshd_config` plus simple `Include` directives; `Match` behavior may differ from effective OpenSSH config.
 - Effective SSH mode executes `sshd -T`; use it only when scanning the live host intentionally.
 - Package metadata age relies on local cache marker mtimes and does not call package manager commands.
+- Package vulnerability findings require an explicit local JSON feed and never fetch remote CVE data.
+- Bridge posture checks rely on procfs and sysfs files inside the scanned root; missing bridge data is treated as unknown.
 - Firewalld and nftables service state is inferred from systemd enablement markers when present; config-only detection leaves enabled state unknown.
 - Enabled systemd service exposure detection is static and only flags common wildcard bind options in service unit `ExecStart` lines.
 - Missing files are treated as absent data so scans can run in containers and fixture roots.
@@ -230,8 +240,8 @@ Please report vulnerabilities using [SECURITY.md](SECURITY.md).
 
 ## Roadmap
 
-- Additional bridge networking rules.
-- Package vulnerability feed adapters beyond local package manager metadata.
+- Container runtime posture checks.
+- Additional package vulnerability feed formats.
 
 Contributor-ready ideas live in [docs/contributor-ideas.md](docs/contributor-ideas.md).
 

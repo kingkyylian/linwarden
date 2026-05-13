@@ -1,12 +1,12 @@
 # JSON Report Schema
 
-Linwarden JSON reports are intended for CI and fleet ingestion. The current schema version is `1.5`.
+Linwarden JSON reports are intended for CI and fleet ingestion. The current schema version is `1.6`.
 
 ## Top-Level Shape
 
 ```json
 {
-  "schema_version": "1.5",
+  "schema_version": "1.6",
   "host": {},
   "summary": {},
   "findings": [],
@@ -30,7 +30,9 @@ Linwarden JSON reports are intended for CI and fleet ingestion. The current sche
 | `sshd_match_context` | array | OpenSSH `-C` Match context entries used for effective SSH collection. |
 | `package_status` | object | Package manager and update counts when known. |
 | `firewall_status` | object | Host firewall provider and enabled state when known. |
+| `bridge_interfaces` | array | Linux bridge interfaces detected from sysfs. |
 | `systemd_service_exposures` | array | Enabled systemd services with static wildcard bind evidence. |
+| `package_vulnerabilities` | array | Package vulnerabilities loaded from an explicit local feed. |
 
 ## Package Status
 
@@ -43,6 +45,16 @@ Linwarden JSON reports are intended for CI and fleet ingestion. The current sche
 | `metadata_age_days` | integer or null | Age of the newest known local package metadata marker. |
 | `metadata_source` | string | Source used for metadata age, or `not found`. |
 
+## Bridge Interface
+
+| Field | Type | Description |
+| --- | --- | --- |
+| `name` | string | Bridge interface name such as `docker0` or `br0`. |
+| `members` | array | Member interface names from sysfs `brif` entries. |
+| `ipv4_forwarding` | boolean or null | Per-interface IPv4 forwarding value when available. |
+| `ipv6_forwarding` | boolean or null | Per-interface IPv6 forwarding value when available. |
+| `source` | string | Sysfs bridge marker path used as evidence. |
+
 ## Systemd Service Exposure
 
 | Field | Type | Description |
@@ -52,6 +64,19 @@ Linwarden JSON reports are intended for CI and fleet ingestion. The current sche
 | `source` | string | Unit file path used as evidence. |
 | `enabled_source` | string | Enablement marker path used as evidence. |
 | `exec_start` | string | `ExecStart` line that carried the bind evidence. |
+
+## Package Vulnerability
+
+| Field | Type | Description |
+| --- | --- | --- |
+| `package` | string | Package name from the local vulnerability feed. |
+| `installed_version` | string | Installed package version reported by the feed producer. |
+| `fixed_version` | string | Version that fixes the vulnerability according to the feed. |
+| `vulnerability_id` | string | Vulnerability identifier such as a CVE ID. |
+| `severity` | string | `critical`, `high`, `medium`, or `low` from the feed. |
+| `summary` | string | Short feed-provided vulnerability summary, or empty string. |
+| `url` | string | Supporting URL from the feed, or empty string. |
+| `source` | string | Local feed file path used as evidence. |
 
 ## Summary
 

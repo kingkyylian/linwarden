@@ -180,6 +180,78 @@ def evaluate_snapshot(snapshot: HostSnapshot) -> list[Finding]:
             )
         )
 
+    if snapshot.bridge_interfaces:
+        bridge_nf_ipv4 = snapshot.sysctls.get("net.bridge.bridge-nf-call-iptables")
+        if bridge_nf_ipv4 == "0":
+            findings.append(
+                Finding(
+                    rule_id="LNX-NET-005",
+                    severity="medium",
+                    title="Bridge IPv4 firewall hooks are disabled",
+                    category="network",
+                    evidence="net.bridge.bridge-nf-call-iptables=0 with bridge interfaces present",
+                    impact=(
+                        "IPv4 traffic crossing Linux bridges may bypass iptables-based host policy, "
+                        "which is common on container hosts."
+                    ),
+                    remediation=(
+                        "Set net.bridge.bridge-nf-call-iptables=1 when bridged container traffic "
+                        "must pass through iptables policy."
+                    ),
+                    references=("https://docs.kernel.org/networking/bridge.html",),
+                )
+            )
+
+        bridge_nf_ipv6 = snapshot.sysctls.get("net.bridge.bridge-nf-call-ip6tables")
+        if bridge_nf_ipv6 == "0":
+            findings.append(
+                Finding(
+                    rule_id="LNX-NET-006",
+                    severity="medium",
+                    title="Bridge IPv6 firewall hooks are disabled",
+                    category="network",
+                    evidence="net.bridge.bridge-nf-call-ip6tables=0 with bridge interfaces present",
+                    impact=(
+                        "IPv6 traffic crossing Linux bridges may bypass ip6tables-based host policy, "
+                        "which is common on container hosts."
+                    ),
+                    remediation=(
+                        "Set net.bridge.bridge-nf-call-ip6tables=1 when bridged container traffic "
+                        "must pass through ip6tables policy."
+                    ),
+                    references=("https://docs.kernel.org/networking/bridge.html",),
+                )
+            )
+
+    for bridge in snapshot.bridge_interfaces:
+        enabled_protocols = []
+        if bridge.ipv4_forwarding is True:
+            enabled_protocols.append("IPv4")
+        if bridge.ipv6_forwarding is True:
+            enabled_protocols.append("IPv6")
+        if enabled_protocols:
+            findings.append(
+                Finding(
+                    rule_id="LNX-NET-007",
+                    severity="medium",
+                    title="Bridge interface forwarding is enabled",
+                    category="network",
+                    evidence=(
+                        f"{bridge.name} bridge forwarding enabled for "
+                        f"{', '.join(enabled_protocols)}"
+                    ),
+                    impact=(
+                        "A bridge interface with forwarding enabled can route traffic for attached "
+                        "container or VM interfaces when host policy allows it."
+                    ),
+                    remediation=(
+                        "Disable forwarding on the bridge interface unless this host is intentionally "
+                        "routing bridged workloads."
+                    ),
+                    references=("https://docs.kernel.org/networking/ip-sysctl.html",),
+                )
+            )
+
     mmap_min_addr = _int_or_none(snapshot.sysctls.get("vm.mmap_min_addr"))
     if mmap_min_addr is not None and mmap_min_addr < 65536:
         findings.append(
@@ -288,6 +360,29 @@ def evaluate_snapshot(snapshot: HostSnapshot) -> list[Finding]:
                 impact="Stale package metadata can hide available fixes from update checks and audit jobs.",
                 remediation="Refresh package metadata with the system package manager before trusting update counts.",
                 references=("man:apt(8)", "man:dnf(8)", "man:pacman(8)", "man:apk(8)"),
+            )
+        )
+
+    for vulnerability in snapshot.package_vulnerabilities:
+        findings.append(
+            Finding(
+                rule_id="LNX-PKG-004",
+                severity=vulnerability.severity,
+                title="Known package vulnerability is present",
+                category="packages",
+                evidence=(
+                    f"{vulnerability.package} {vulnerability.installed_version} is affected by "
+                    f"{vulnerability.vulnerability_id}"
+                ),
+                impact=(
+                    vulnerability.summary
+                    or "A local vulnerability feed reports that the installed package version is affected."
+                ),
+                remediation=(
+                    f"Upgrade {vulnerability.package} to {vulnerability.fixed_version} or later, "
+                    "or document why the local feed entry does not apply."
+                ),
+                references=(vulnerability.url,) if vulnerability.url else (),
             )
         )
 

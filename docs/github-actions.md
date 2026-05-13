@@ -73,6 +73,35 @@ jobs:
           upload-sarif: "true"
 ```
 
+## Mounted Host Paths
+
+Use explicit procfs, sysfs, and `/etc` roots when a job mounts host paths separately.
+
+```yaml
+- name: Run Linwarden against mounted host paths
+  uses: kingkyylian/linwarden@v0.11.0
+  with:
+    root: /host
+    sys-root: /host/sys
+    format: json
+    fail-on: high
+```
+
+## Local Vulnerability Feed
+
+Pass a generated local JSON feed when an earlier CI step has already matched package vulnerabilities.
+
+```yaml
+- name: Run Linwarden with local vulnerability feed
+  uses: kingkyylian/linwarden@v0.11.0
+  with:
+    root: container-root
+    vulnerability-feed: linwarden-vulnerabilities.json
+    format: sarif
+    fail-on: high
+    upload-sarif: "true"
+```
+
 ## Markdown Job Summary
 
 Use this workflow for operators who want the report directly in the Actions run.

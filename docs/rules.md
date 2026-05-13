@@ -119,6 +119,27 @@ Linwarden uses static, rootless evidence by default. For SSH, static mode reads 
 - Impact: Malicious redirects can influence IPv6 routing decisions on hostile networks.
 - Remediation: Set `net.ipv6.conf.all.accept_redirects=0` unless redirects are required.
 
+### LNX-NET-005: Bridge IPv4 firewall hooks are disabled
+
+- Severity: medium
+- Evidence: `net.bridge.bridge-nf-call-iptables=0` with at least one bridge interface present.
+- Impact: IPv4 traffic crossing Linux bridges may bypass iptables-based host policy.
+- Remediation: Set `net.bridge.bridge-nf-call-iptables=1` when bridged container traffic must pass through iptables policy.
+
+### LNX-NET-006: Bridge IPv6 firewall hooks are disabled
+
+- Severity: medium
+- Evidence: `net.bridge.bridge-nf-call-ip6tables=0` with at least one bridge interface present.
+- Impact: IPv6 traffic crossing Linux bridges may bypass ip6tables-based host policy.
+- Remediation: Set `net.bridge.bridge-nf-call-ip6tables=1` when bridged container traffic must pass through ip6tables policy.
+
+### LNX-NET-007: Bridge interface forwarding is enabled
+
+- Severity: medium
+- Evidence: bridge interface name and enabled IPv4 or IPv6 forwarding family.
+- Impact: A bridge interface can route traffic for attached container or VM interfaces.
+- Remediation: Disable forwarding on the bridge interface unless the host intentionally routes bridged workloads.
+
 ## Package Rules
 
 ### LNX-PKG-001: Package updates are available
@@ -141,6 +162,15 @@ Linwarden uses static, rootless evidence by default. For SSH, static mode reads 
 - Evidence: age of the newest known local package metadata marker.
 - Impact: Stale package metadata can hide available fixes from update checks and audit jobs.
 - Remediation: Refresh package metadata with the system package manager before trusting update counts.
+
+### LNX-PKG-004: Known package vulnerability is present
+
+- Severity: local feed severity
+- Evidence: package name, installed version, and vulnerability ID from the local feed.
+- Impact: A feed-provided vulnerability applies to the installed package version.
+- Remediation: Upgrade to the feed-provided fixed version or document why the entry does not apply.
+
+Linwarden only emits this rule when `--vulnerability-feed` points to a local JSON feed. It does not fetch CVE data, query package managers, or infer installed packages itself.
 
 ## Firewall Rules
 

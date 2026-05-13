@@ -40,7 +40,7 @@ class ActionMetadataTests(unittest.TestCase):
     def test_github_actions_docs_use_the_composite_action(self) -> None:
         text = DOCS.read_text(encoding="utf-8")
 
-        self.assertIn("uses: kingkyylian/linwarden@v0.10.0", text)
+        self.assertIn("uses: kingkyylian/linwarden@v0.10.1", text)
         self.assertIn("upload-sarif: \"true\"", text)
         self.assertIn("add-summary: \"true\"", text)
 
@@ -92,7 +92,8 @@ class ActionMetadataTests(unittest.TestCase):
         self.assertIn("uses: actions/attest@v4", text)
         self.assertIn("subject-path: dist/*", text)
         self.assertIn("gh attestation verify", docs)
-        self.assertIn("dist/*", docs)
+        self.assertIn("for artifact in dist/*", docs)
+        self.assertIn('gh attestation verify "$artifact" --repo kingkyylian/linwarden', docs)
 
 
 if __name__ == "__main__":

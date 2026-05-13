@@ -3,8 +3,8 @@
 Linwarden releases are tag-driven.
 
 ```bash
-git tag v0.10.0
-git push origin v0.10.0
+git tag v0.10.1
+git push origin v0.10.1
 ```
 
 The release workflow validates the project, builds source and wheel artifacts, writes `dist/SHA256SUMS`, and emits GitHub artifact attestations for `dist/*`.
@@ -17,7 +17,7 @@ The release workflow validates the project, builds source and wheel artifacts, w
 4. Run `python scripts/release_assets.py dist`.
 5. Confirm `dist/SHA256SUMS` contains only the intended release files.
 6. Push the version tag.
-7. Verify published artifact attestations with `gh attestation verify dist/* --repo kingkyylian/linwarden`.
+7. Verify each published artifact attestation with `gh attestation verify`.
 8. Link the release notes to [github-actions.md](github-actions.md), [comparison.md](comparison.md), and [launch.md](launch.md).
 
 ## Optional GPG Signing
@@ -36,7 +36,9 @@ When configured, the release includes `SHA256SUMS.asc`.
 Every tag release creates GitHub artifact attestations for the files in `dist/*` after checksum generation and optional GPG signing. Download release assets locally, then verify them with:
 
 ```bash
-gh attestation verify dist/* --repo kingkyylian/linwarden
+for artifact in dist/*; do
+  gh attestation verify "$artifact" --repo kingkyylian/linwarden
+done
 ```
 
 The attestations complement `SHA256SUMS` and optional `SHA256SUMS.asc`; they do not replace those release assets.

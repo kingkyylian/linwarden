@@ -2,6 +2,10 @@
 
 All notable changes to Linwarden are documented here.
 
+## 0.10.1 - 2026-05-13
+
+- Fixed artifact attestation verification docs to verify release files one at a time.
+
 ## 0.10.0 - 2026-05-13
 
 - Added GitHub artifact attestations for tag release assets.

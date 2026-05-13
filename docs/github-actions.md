@@ -26,7 +26,7 @@ jobs:
         uses: actions/checkout@v6
 
       - name: Run Linwarden
-        uses: kingkyylian/linwarden@v0.8.0
+        uses: kingkyylian/linwarden@v0.9.0
         with:
           root: tests/fixtures/linux-root
           format: sarif
@@ -65,7 +65,7 @@ jobs:
           docker rm "$image_id"
 
       - name: Run Linwarden
-        uses: kingkyylian/linwarden@v0.8.0
+        uses: kingkyylian/linwarden@v0.9.0
         with:
           root: container-root
           format: sarif
@@ -79,7 +79,7 @@ Use this workflow for operators who want the report directly in the Actions run.
 
 ```yaml
 - name: Run Linwarden
-  uses: kingkyylian/linwarden@v0.8.0
+  uses: kingkyylian/linwarden@v0.9.0
   with:
     root: tests/fixtures/linux-root
     format: markdown
@@ -93,7 +93,7 @@ Use multiline `sshd-match` input when OpenSSH `Match` blocks need a concrete con
 
 ```yaml
 - name: Run Linwarden with SSH Match context
-  uses: kingkyylian/linwarden@v0.8.0
+  uses: kingkyylian/linwarden@v0.9.0
   with:
     root: /
     format: json

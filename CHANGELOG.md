@@ -2,7 +2,7 @@
 
 All notable changes to Linwarden are documented here.
 
-## Unreleased
+## 0.9.0 - 2026-05-13
 
 - Added a GitHub Actions example for scanning an unpacked container root.
 - Added richer Fedora fixture coverage for firewalld and DNF metadata.

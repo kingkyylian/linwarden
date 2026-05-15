@@ -23,6 +23,13 @@ Use it with:
 linwarden scan --config linwarden.json --format markdown
 ```
 
+List the built-in profile catalog with:
+
+```bash
+linwarden profiles
+linwarden profiles --format json
+```
+
 ## Fields
 
 | Field | Type | Required | Description |
@@ -33,12 +40,14 @@ linwarden scan --config linwarden.json --format markdown
 
 ## Profiles
 
-| Profile | Suppressed rules |
-| --- | --- |
-| `server` | None. |
-| `workstation` | None. |
-| `router` | `LNX-NET-001`, `LNX-NET-003`. |
-| `container` | `LNX-KRN-001`, `LNX-KRN-003`. |
+| Profile | Intended use | Suppressed rules |
+| --- | --- | --- |
+| `server` | General Linux servers. | None. |
+| `workstation` | Interactive desktops and laptops. SSH, firewall, package, and kernel findings remain visible. | None. |
+| `router` | Hosts that intentionally route traffic between interfaces. | `LNX-NET-001`, `LNX-NET-003`. |
+| `container` | Container or image-root scans where kernel and filesystem sysctl values may be inherited from the host. | `LNX-KRN-001`, `LNX-KRN-002`, `LNX-KRN-003`, `LNX-FS-001`, `LNX-FS-002`. |
+
+Profile suppressions are still emitted as suppressed findings in JSON and Markdown reports. Use `disabled_rules` or `suppressions` only for local exceptions that are not part of the selected host role.
 
 ## Suppression Auditability
 

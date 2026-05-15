@@ -1,13 +1,14 @@
 from __future__ import annotations
 
 import argparse
+import json
 import sys
 from pathlib import Path
 from typing import Optional, Sequence, TextIO
 
 from . import __version__
 from .collectors import collect_host_snapshot
-from .config import apply_config, default_config, load_config
+from .config import apply_config, default_config, load_config, profile_catalog
 from .reporters import render_json, render_markdown, render_sarif
 from .rules import evaluate_snapshot, threshold_is_met
 
@@ -24,6 +25,8 @@ def main(
 
     if args.command == "scan":
         return _scan(args, out, err)
+    if args.command == "profiles":
+        return _profiles(args, out)
 
     parser.print_help(err)
     return 1
@@ -44,6 +47,12 @@ def _build_parser() -> argparse.ArgumentParser:
     scan.add_argument("--sys-root", type=Path, help="override sysfs root")
     scan.add_argument("--config", type=Path, help="JSON config file with profile and suppressions")
     scan.add_argument("--vulnerability-feed", type=Path, help="local package vulnerability feed JSON file")
+    scan.add_argument(
+        "--vulnerability-feed-format",
+        choices=("linwarden", "trivy"),
+        default="linwarden",
+        help="format of --vulnerability-feed",
+    )
     scan.add_argument("--sshd-mode", choices=("static", "effective", "auto"), default="static")
     scan.add_argument("--sshd-binary", default="sshd", help="sshd binary to use with effective or auto mode")
     scan.add_argument(
@@ -61,7 +70,46 @@ def _build_parser() -> argparse.ArgumentParser:
         default="off",
         help="return exit code 2 when a finding at or above this severity exists",
     )
+
+    profiles = subparsers.add_parser("profiles", help="list built-in scan profiles")
+    profiles.add_argument("--format", choices=("json", "markdown"), default="markdown")
     return parser
+
+
+def _profiles(args: argparse.Namespace, stdout: TextIO) -> int:
+    profiles = profile_catalog()
+    if args.format == "json":
+        payload = {
+            "profiles": [
+                {
+                    "name": profile.name,
+                    "description": profile.description,
+                    "suppressed_rules": [
+                        {"rule_id": rule_id, "reason": reason}
+                        for rule_id, reason in sorted(profile.suppressions.items())
+                    ],
+                }
+                for profile in profiles
+            ]
+        }
+        stdout.write(json.dumps(payload, indent=2, sort_keys=True) + "\n")
+        return 0
+
+    lines = [
+        "# Linwarden Profiles",
+        "",
+        "| Profile | Description | Suppressed Rules |",
+        "| --- | --- | --- |",
+    ]
+    for profile in profiles:
+        suppressed = ", ".join(sorted(profile.suppressions)) or "None"
+        lines.append(f"| {profile.name} | {_markdown_cell(profile.description)} | {suppressed} |")
+    stdout.write("\n".join(lines) + "\n")
+    return 0
+
+
+def _markdown_cell(value: str) -> str:
+    return value.replace("|", "\\|").replace("\n", " ")
 
 
 def _scan(args: argparse.Namespace, stdout: TextIO, stderr: TextIO) -> int:
@@ -81,6 +129,7 @@ def _scan(args: argparse.Namespace, stdout: TextIO, stderr: TextIO) -> int:
             sshd_binary=args.sshd_binary,
             sshd_match_context=tuple(args.sshd_match),
             vulnerability_feed=args.vulnerability_feed,
+            vulnerability_feed_format=args.vulnerability_feed_format,
         )
     except (OSError, RuntimeError, ValueError) as exc:
         stderr.write(f"linwarden: {exc}\n")

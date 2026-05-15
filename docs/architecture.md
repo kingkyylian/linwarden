@@ -55,7 +55,7 @@ Package manager labels are inferred from `/etc/os-release` `ID` and `ID_LIKE` va
 
 Bridge posture detection is static. It reads bridge interfaces from sysfs, bridge firewall hook sysctls from procfs, and per-bridge interface forwarding values from procfs. It does not call `ip`, `bridge`, `sysctl`, Docker, Podman, or Kubernetes tools.
 
-Package vulnerability feed ingestion is explicit and local-only. The CLI reads the JSON file provided through `--vulnerability-feed`, validates the documented contract, and converts each entry into normal package findings. Normal scans do not read vulnerability feeds unless the option is present.
+Package vulnerability feed ingestion is explicit and local-only. The CLI reads the JSON file provided through `--vulnerability-feed`, validates the selected `--vulnerability-feed-format`, and converts each entry into normal package findings. Normal scans do not read vulnerability feeds unless the option is present.
 
 Systemd service exposure detection is static. It follows enabled service markers inside the scanned root and flags common wildcard bind options such as `--bind 0.0.0.0` or `--listen [::]:PORT`; it does not call `systemctl` or inspect live sockets.
 

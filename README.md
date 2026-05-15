@@ -77,9 +77,11 @@ Exit code `2` means at least one finding matched the selected threshold.
 ## CLI
 
 ```text
+linwarden profiles [--format markdown|json]
+
 linwarden scan [--root PATH] [--proc-root PATH] [--etc-root PATH] [--sys-root PATH]
                [--config PATH] [--format markdown|json|sarif]
-               [--vulnerability-feed PATH]
+               [--vulnerability-feed PATH] [--vulnerability-feed-format linwarden|trivy]
                [--sshd-mode static|effective|auto] [--sshd-binary PATH]
                [--sshd-match KEY=VALUE]
                [--output PATH]
@@ -89,6 +91,7 @@ linwarden scan [--root PATH] [--proc-root PATH] [--etc-root PATH] [--sys-root PA
 Common examples:
 
 ```bash
+linwarden profiles
 linwarden scan --format markdown --output linwarden-report.md
 linwarden scan --format json --fail-on high
 linwarden scan --config linwarden.json --format sarif --output linwarden.sarif
@@ -97,6 +100,7 @@ linwarden scan --sshd-mode effective --sshd-match user=deploy --sshd-match addr=
 linwarden scan --root /mnt/server-image --format json
 linwarden scan --proc-root /host/proc --etc-root /host/etc --sys-root /host/sys --format markdown
 linwarden scan --vulnerability-feed ./linwarden-vulnerabilities.json --format sarif
+linwarden scan --vulnerability-feed ./trivy-report.json --vulnerability-feed-format trivy --format sarif
 ```
 
 ## Configuration
@@ -120,10 +124,10 @@ Profiles:
 
 | Profile | Behavior |
 | --- | --- |
-| `server` | Default. No profile suppressions. |
-| `workstation` | No profile suppressions yet. |
-| `router` | Suppresses IPv4 and IPv6 forwarding findings. |
-| `container` | Suppresses selected host-kernel findings that may be inherited. |
+| `server` | Default for general Linux servers. No profile suppressions. |
+| `workstation` | Interactive desktop or laptop posture. No profile suppressions; SSH, firewall, package, and kernel findings stay visible. |
+| `router` | For hosts that intentionally route traffic. Suppresses IPv4 and IPv6 forwarding findings. |
+| `container` | For container or image-root scans where host-kernel sysctl values may be inherited. Suppresses kernel and filesystem sysctl findings. |
 
 Suppressed findings remain visible in JSON and Markdown reports. SARIF output includes active findings only.
 

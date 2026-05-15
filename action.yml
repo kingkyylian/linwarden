@@ -24,6 +24,9 @@ inputs:
   vulnerability-feed:
     description: Optional local package vulnerability feed JSON path.
     default: ""
+  vulnerability-feed-format:
+    description: "Local vulnerability feed format: linwarden or trivy."
+    default: "linwarden"
   sshd-mode:
     description: "SSH collection mode: static, effective, or auto."
     default: "static"
@@ -74,6 +77,7 @@ runs:
         CONFIG: ${{ inputs.config }}
         SYS_ROOT: ${{ inputs.sys-root }}
         VULNERABILITY_FEED: ${{ inputs.vulnerability-feed }}
+        VULNERABILITY_FEED_FORMAT: ${{ inputs.vulnerability-feed-format }}
         SSHD_MODE: ${{ inputs.sshd-mode }}
         SSHD_BINARY: ${{ inputs.sshd-binary }}
         SSHD_MATCH: ${{ inputs.sshd-match }}
@@ -110,6 +114,7 @@ runs:
 
         if [ -n "$VULNERABILITY_FEED" ]; then
           args+=(--vulnerability-feed "$VULNERABILITY_FEED")
+          args+=(--vulnerability-feed-format "$VULNERABILITY_FEED_FORMAT")
         fi
 
         while IFS= read -r match_context; do

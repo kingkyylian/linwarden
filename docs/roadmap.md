@@ -2,9 +2,9 @@
 
 ## Near Term
 
-- Expand profile catalog with clearer server, workstation, router, and container defaults.
 - Add real Linux integration test fixtures from common distributions.
 - Add additional package vulnerability feed formats.
+- Refine profile suppressions from real-world server, workstation, router, and container fixture feedback.
 
 ## Later
 

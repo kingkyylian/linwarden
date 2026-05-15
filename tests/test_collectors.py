@@ -249,6 +249,34 @@ class CollectorTests(unittest.TestCase):
         self.assertEqual(vulnerability.severity, "critical")
         self.assertEqual(vulnerability.source, str(feed))
 
+    def test_collects_package_vulnerabilities_from_trivy_json_feed(self) -> None:
+        feed = Path(__file__).parent / "fixtures" / "trivy-vulnerability-report.json"
+
+        snapshot = collect_host_snapshot(
+            root=FIXTURE_ROOT,
+            proc_root=FIXTURE_ROOT / "proc",
+            etc_root=FIXTURE_ROOT / "etc",
+            vulnerability_feed=feed,
+            vulnerability_feed_format="trivy",
+        )
+
+        self.assertEqual(len(snapshot.package_vulnerabilities), 2)
+        first = snapshot.package_vulnerabilities[0]
+        self.assertEqual(first.package, "openssl")
+        self.assertEqual(first.installed_version, "3.0.2-0ubuntu1")
+        self.assertEqual(first.fixed_version, "3.0.2-0ubuntu1.20")
+        self.assertEqual(first.vulnerability_id, "CVE-2026-1001")
+        self.assertEqual(first.severity, "critical")
+        self.assertEqual(first.summary, "openssl: fixture critical vulnerability")
+        self.assertEqual(first.url, "https://avd.aquasec.com/nvd/cve-2026-1001")
+        self.assertIn("trivy-vulnerability-report.json#fixture-image:latest", first.source)
+
+        second = snapshot.package_vulnerabilities[1]
+        self.assertEqual(second.package, "curl")
+        self.assertEqual(second.fixed_version, "")
+        self.assertEqual(second.severity, "high")
+        self.assertEqual(second.url, "https://example.invalid/CVE-2026-1002")
+
     def test_rejects_invalid_package_vulnerability_feed(self) -> None:
         feed = Path(__file__).parent / "fixtures" / "invalid-vulnerability-feed.json"
 

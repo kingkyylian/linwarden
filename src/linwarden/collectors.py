@@ -81,6 +81,7 @@ def collect_host_snapshot(
     sshd_match_context: Sequence[str] = (),
     sys_root: Optional[Union[Path, str]] = None,
     vulnerability_feed: Optional[Union[Path, str]] = None,
+    vulnerability_feed_format: str = "linwarden",
 ) -> HostSnapshot:
     root_path = Path(root)
     proc_path = Path(proc_root) if proc_root is not None else root_path / "proc"
@@ -110,7 +111,7 @@ def collect_host_snapshot(
         firewall_status=_read_firewall_status(etc_path),
         bridge_interfaces=_read_bridge_interfaces(sys_path, proc_path),
         systemd_service_exposures=_read_systemd_service_exposures(root_path, etc_path),
-        package_vulnerabilities=_read_package_vulnerabilities(vulnerability_feed),
+        package_vulnerabilities=_read_package_vulnerabilities(vulnerability_feed, vulnerability_feed_format),
     )
 
 
@@ -527,6 +528,7 @@ def _first_service_value(unit_text: str, key: str) -> str:
 
 def _read_package_vulnerabilities(
     vulnerability_feed: Optional[Union[Path, str]],
+    vulnerability_feed_format: str,
 ) -> tuple[PackageVulnerability, ...]:
     if vulnerability_feed is None:
         return ()
@@ -539,6 +541,14 @@ def _read_package_vulnerabilities(
     except json.JSONDecodeError as exc:
         raise ValueError(f"vulnerability feed {feed_path}: invalid JSON at line {exc.lineno}") from exc
 
+    if vulnerability_feed_format == "linwarden":
+        return _read_linwarden_vulnerability_feed(feed_path, payload)
+    if vulnerability_feed_format == "trivy":
+        return _read_trivy_vulnerability_feed(feed_path, payload)
+    raise ValueError(f"vulnerability feed format must be linwarden or trivy: {vulnerability_feed_format}")
+
+
+def _read_linwarden_vulnerability_feed(feed_path: Path, payload: object) -> tuple[PackageVulnerability, ...]:
     if not isinstance(payload, dict):
         raise ValueError(f"vulnerability feed {feed_path}: root must be an object")
     if payload.get("version") != 1:
@@ -553,6 +563,47 @@ def _read_package_vulnerabilities(
         if not isinstance(entry, dict):
             raise ValueError(f"vulnerability feed {feed_path}: vulnerabilities[{index}] must be an object")
         vulnerabilities.append(_package_vulnerability_from_entry(feed_path, index, entry))
+    return tuple(vulnerabilities)
+
+
+def _read_trivy_vulnerability_feed(feed_path: Path, payload: object) -> tuple[PackageVulnerability, ...]:
+    if isinstance(payload, dict):
+        results = payload.get("Results")
+    elif isinstance(payload, list):
+        results = payload
+    else:
+        raise ValueError(f"vulnerability feed {feed_path}: trivy root must be an object or array")
+
+    if not isinstance(results, list):
+        raise ValueError(f"vulnerability feed {feed_path}: trivy Results must be an array")
+
+    vulnerabilities: list[PackageVulnerability] = []
+    for result_index, result in enumerate(results):
+        if not isinstance(result, dict):
+            raise ValueError(f"vulnerability feed {feed_path}: trivy Results[{result_index}] must be an object")
+        target = _optional_trivy_string(result, "Target")
+        entries = result.get("Vulnerabilities")
+        if entries is None:
+            continue
+        if not isinstance(entries, list):
+            raise ValueError(
+                f"vulnerability feed {feed_path}: trivy Results[{result_index}].Vulnerabilities must be an array"
+            )
+        for vulnerability_index, entry in enumerate(entries):
+            if not isinstance(entry, dict):
+                raise ValueError(
+                    f"vulnerability feed {feed_path}: trivy Results[{result_index}]."
+                    f"Vulnerabilities[{vulnerability_index}] must be an object"
+                )
+            vulnerabilities.append(
+                _package_vulnerability_from_trivy_entry(
+                    feed_path,
+                    target,
+                    result_index,
+                    vulnerability_index,
+                    entry,
+                )
+            )
     return tuple(vulnerabilities)
 
 
@@ -582,6 +633,38 @@ def _package_vulnerability_from_entry(
     )
 
 
+def _package_vulnerability_from_trivy_entry(
+    feed_path: Path,
+    target: str,
+    result_index: int,
+    vulnerability_index: int,
+    entry: dict[str, object],
+) -> PackageVulnerability:
+    severity = _required_trivy_string(feed_path, result_index, vulnerability_index, entry, "Severity").lower()
+    if severity == "unknown":
+        severity = "low"
+    if severity not in _VULNERABILITY_SEVERITIES:
+        raise ValueError(
+            f"vulnerability feed {feed_path}: trivy Results[{result_index}]."
+            f"Vulnerabilities[{vulnerability_index}].Severity must be critical, high, medium, low, or unknown"
+        )
+
+    return PackageVulnerability(
+        package=_required_trivy_string(feed_path, result_index, vulnerability_index, entry, "PkgName"),
+        installed_version=_required_trivy_string(
+            feed_path, result_index, vulnerability_index, entry, "InstalledVersion"
+        ),
+        fixed_version=_optional_trivy_string(entry, "FixedVersion"),
+        vulnerability_id=_required_trivy_string(
+            feed_path, result_index, vulnerability_index, entry, "VulnerabilityID"
+        ),
+        severity=severity,
+        summary=_optional_trivy_string(entry, "Title") or _optional_trivy_string(entry, "Description"),
+        url=_trivy_reference_url(entry),
+        source=f"{feed_path}#{target}" if target else str(feed_path),
+    )
+
+
 def _required_feed_string(feed_path: Path, index: int, entry: dict[str, object], key: str) -> str:
     value = entry.get(key)
     if not isinstance(value, str) or not value.strip():
@@ -596,3 +679,36 @@ def _optional_feed_string(feed_path: Path, index: int, entry: dict[str, object],
     if not isinstance(value, str):
         raise ValueError(f"vulnerability feed {feed_path}: vulnerabilities[{index}].{key} must be a string")
     return value.strip()
+
+
+def _required_trivy_string(
+    feed_path: Path,
+    result_index: int,
+    vulnerability_index: int,
+    entry: dict[str, object],
+    key: str,
+) -> str:
+    value = entry.get(key)
+    if not isinstance(value, str) or not value.strip():
+        raise ValueError(
+            f"vulnerability feed {feed_path}: trivy Results[{result_index}]."
+            f"Vulnerabilities[{vulnerability_index}].{key} must be a non-empty string"
+        )
+    return value.strip()
+
+
+def _optional_trivy_string(entry: dict[str, object], key: str) -> str:
+    value = entry.get(key, "")
+    return value.strip() if isinstance(value, str) else ""
+
+
+def _trivy_reference_url(entry: dict[str, object]) -> str:
+    primary_url = _optional_trivy_string(entry, "PrimaryURL")
+    if primary_url:
+        return primary_url
+    references = entry.get("References")
+    if isinstance(references, list):
+        for reference in references:
+            if isinstance(reference, str) and reference.strip():
+                return reference.strip()
+    return ""

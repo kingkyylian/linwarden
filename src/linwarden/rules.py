@@ -364,6 +364,16 @@ def evaluate_snapshot(snapshot: HostSnapshot) -> list[Finding]:
         )
 
     for vulnerability in snapshot.package_vulnerabilities:
+        if vulnerability.fixed_version:
+            vulnerability_remediation = (
+                f"Upgrade {vulnerability.package} to {vulnerability.fixed_version} or later, "
+                "or document why the local feed entry does not apply."
+            )
+        else:
+            vulnerability_remediation = (
+                f"Review the vendor advisory for {vulnerability.package}; the local feed did not provide "
+                "a fixed version."
+            )
         findings.append(
             Finding(
                 rule_id="LNX-PKG-004",
@@ -378,10 +388,7 @@ def evaluate_snapshot(snapshot: HostSnapshot) -> list[Finding]:
                     vulnerability.summary
                     or "A local vulnerability feed reports that the installed package version is affected."
                 ),
-                remediation=(
-                    f"Upgrade {vulnerability.package} to {vulnerability.fixed_version} or later, "
-                    "or document why the local feed entry does not apply."
-                ),
+                remediation=vulnerability_remediation,
                 references=(vulnerability.url,) if vulnerability.url else (),
             )
         )

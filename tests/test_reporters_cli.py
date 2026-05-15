@@ -104,6 +104,27 @@ class ReporterAndCliTests(unittest.TestCase):
         self.assertEqual(err.getvalue(), "")
         self.assertEqual(json.loads(out.getvalue())["summary"]["by_severity"]["high"], 7)
 
+    def test_cli_lists_profile_catalog_as_json(self) -> None:
+        out = StringIO()
+        err = StringIO()
+
+        exit_code = main(["profiles", "--format", "json"], stdout=out, stderr=err)
+
+        payload = json.loads(out.getvalue())
+        profiles = {profile["name"]: profile for profile in payload["profiles"]}
+        self.assertEqual(exit_code, 0)
+        self.assertEqual(err.getvalue(), "")
+        self.assertIn("server", profiles)
+        self.assertIn("workstation", profiles)
+        self.assertIn("router", profiles)
+        self.assertIn("container", profiles)
+        self.assertEqual(profiles["server"]["suppressed_rules"], [])
+        self.assertIn(
+            "LNX-KRN-002",
+            {rule["rule_id"] for rule in profiles["container"]["suppressed_rules"]},
+        )
+        self.assertIn("routes traffic", profiles["router"]["description"])
+
     def test_cli_can_use_effective_sshd_config(self) -> None:
         with TemporaryDirectory() as temp_dir:
             fake_sshd = Path(temp_dir) / "sshd"
@@ -181,6 +202,39 @@ class ReporterAndCliTests(unittest.TestCase):
         self.assertEqual(len(payload["host"]["package_vulnerabilities"]), 2)
         self.assertIn("LNX-PKG-004", {finding["rule_id"] for finding in payload["findings"]})
 
+    def test_cli_accepts_trivy_package_vulnerability_feed(self) -> None:
+        out = StringIO()
+        err = StringIO()
+        feed = Path(__file__).parent / "fixtures" / "trivy-vulnerability-report.json"
+
+        exit_code = main(
+            [
+                "scan",
+                "--root",
+                str(FIXTURE_ROOT),
+                "--vulnerability-feed",
+                str(feed),
+                "--vulnerability-feed-format",
+                "trivy",
+                "--format",
+                "json",
+                "--fail-on",
+                "critical",
+            ],
+            stdout=out,
+            stderr=err,
+        )
+
+        payload = json.loads(out.getvalue())
+        self.assertEqual(exit_code, 2)
+        self.assertEqual(err.getvalue(), "")
+        self.assertEqual(len(payload["host"]["package_vulnerabilities"]), 2)
+        self.assertIn(
+            "CVE-2026-1001",
+            {finding["vulnerability_id"] for finding in payload["host"]["package_vulnerabilities"]},
+        )
+        self.assertIn("LNX-PKG-004", {finding["rule_id"] for finding in payload["findings"]})
+
     def test_cli_rejects_invalid_local_package_vulnerability_feed(self) -> None:
         out = StringIO()
         err = StringIO()
@@ -239,6 +293,7 @@ class ReporterAndCliTests(unittest.TestCase):
         self.assertIn('"version": 1', text)
         self.assertIn('"vulnerabilities"', text)
         self.assertIn("--vulnerability-feed", text)
+        self.assertIn("--vulnerability-feed-format trivy", text)
 
 
 if __name__ == "__main__":

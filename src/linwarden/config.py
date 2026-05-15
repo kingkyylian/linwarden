@@ -3,21 +3,54 @@ from __future__ import annotations
 import json
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Union
+from typing import Any, Mapping, Union
 
 from .models import EvaluationResult, Finding, SuppressedFinding
 
-PROFILE_SUPPRESSIONS = {
-    "server": {},
-    "workstation": {},
-    "router": {
-        "LNX-NET-001": "router profile expects IPv4 forwarding",
-        "LNX-NET-003": "router profile expects IPv6 forwarding",
-    },
-    "container": {
-        "LNX-KRN-001": "container profile may inherit kernel ASLR from the host",
-        "LNX-KRN-003": "container profile may inherit kernel pointer visibility from the host",
-    },
+
+@dataclass(frozen=True)
+class ProfileDefinition:
+    name: str
+    description: str
+    suppressions: Mapping[str, str]
+
+
+PROFILE_CATALOG = {
+    "server": ProfileDefinition(
+        name="server",
+        description="Default profile for general Linux servers; no profile suppressions are applied.",
+        suppressions={},
+    ),
+    "workstation": ProfileDefinition(
+        name="workstation",
+        description=(
+            "Profile for interactive desktops and laptops; no profile suppressions are applied so "
+            "SSH, firewall, package, and kernel findings stay visible."
+        ),
+        suppressions={},
+    ),
+    "router": ProfileDefinition(
+        name="router",
+        description="Profile for hosts whose role intentionally routes traffic between interfaces.",
+        suppressions={
+            "LNX-NET-001": "router profile expects IPv4 forwarding",
+            "LNX-NET-003": "router profile expects IPv6 forwarding",
+        },
+    ),
+    "container": ProfileDefinition(
+        name="container",
+        description=(
+            "Profile for container or image-root scans where kernel and filesystem sysctl values "
+            "may be inherited from the container host."
+        ),
+        suppressions={
+            "LNX-KRN-001": "container profile may inherit kernel ASLR from the host",
+            "LNX-KRN-002": "container profile may inherit low memory mapping policy from the host",
+            "LNX-KRN-003": "container profile may inherit kernel pointer visibility from the host",
+            "LNX-FS-001": "container profile may inherit hardlink protection from the host",
+            "LNX-FS-002": "container profile may inherit symlink protection from the host",
+        },
+    ),
 }
 
 
@@ -32,14 +65,18 @@ def default_config() -> ScanConfig:
     return ScanConfig()
 
 
+def profile_catalog() -> tuple[ProfileDefinition, ...]:
+    return tuple(PROFILE_CATALOG.values())
+
+
 def load_config(path: Union[Path, str]) -> ScanConfig:
     payload = json.loads(Path(path).read_text(encoding="utf-8"))
     if not isinstance(payload, dict):
         raise ValueError("config must be a JSON object")
 
     profile = _string_value(payload.get("profile", "server"), "profile")
-    if profile not in PROFILE_SUPPRESSIONS:
-        allowed = ", ".join(sorted(PROFILE_SUPPRESSIONS))
+    if profile not in PROFILE_CATALOG:
+        allowed = ", ".join(sorted(PROFILE_CATALOG))
         raise ValueError(f"unknown profile {profile!r}; expected one of: {allowed}")
 
     disabled_rules = tuple(
@@ -57,7 +94,7 @@ def load_config(path: Union[Path, str]) -> ScanConfig:
 def apply_config(findings: list[Finding], config: ScanConfig) -> EvaluationResult:
     active: list[Finding] = []
     suppressed: list[SuppressedFinding] = []
-    profile_suppressions = PROFILE_SUPPRESSIONS[config.profile]
+    profile_suppressions = PROFILE_CATALOG[config.profile].suppressions
     disabled_rules = set(config.disabled_rules)
 
     for finding in findings:

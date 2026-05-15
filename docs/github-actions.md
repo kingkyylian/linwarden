@@ -102,6 +102,20 @@ Pass a generated local JSON feed when an earlier CI step has already matched pac
     upload-sarif: "true"
 ```
 
+Use `vulnerability-feed-format: trivy` when the file is Trivy JSON output.
+
+```yaml
+- name: Run Linwarden with Trivy JSON
+  uses: kingkyylian/linwarden@v0.12.0
+  with:
+    root: container-root
+    vulnerability-feed: trivy-report.json
+    vulnerability-feed-format: trivy
+    format: sarif
+    fail-on: high
+    upload-sarif: "true"
+```
+
 ## Markdown Job Summary
 
 Use this workflow for operators who want the report directly in the Actions run.

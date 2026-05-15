@@ -2,6 +2,14 @@
 
 All notable changes to Linwarden are documented here.
 
+## 0.13.0 - 2026-05-15
+
+- Added `linwarden profiles` to list built-in scan profile behavior as Markdown or JSON.
+- Expanded the container profile to suppress inherited kernel and filesystem sysctl findings for container and image-root scans.
+- Added `--vulnerability-feed-format` with support for Linwarden, Trivy, and Grype JSON vulnerability feeds.
+- Added Trivy and Grype feed examples to the composite GitHub Action and package vulnerability feed docs.
+- Improved package vulnerability remediation when an imported feed entry does not provide a fixed version.
+
 ## 0.12.0 - 2026-05-13
 
 - Added bridge interface and forwarding posture checks for container-host scenarios.

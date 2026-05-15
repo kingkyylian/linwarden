@@ -49,7 +49,7 @@ def _build_parser() -> argparse.ArgumentParser:
     scan.add_argument("--vulnerability-feed", type=Path, help="local package vulnerability feed JSON file")
     scan.add_argument(
         "--vulnerability-feed-format",
-        choices=("linwarden", "trivy"),
+        choices=("linwarden", "trivy", "grype"),
         default="linwarden",
         help="format of --vulnerability-feed",
     )

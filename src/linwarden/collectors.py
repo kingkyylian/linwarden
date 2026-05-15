@@ -545,7 +545,9 @@ def _read_package_vulnerabilities(
         return _read_linwarden_vulnerability_feed(feed_path, payload)
     if vulnerability_feed_format == "trivy":
         return _read_trivy_vulnerability_feed(feed_path, payload)
-    raise ValueError(f"vulnerability feed format must be linwarden or trivy: {vulnerability_feed_format}")
+    if vulnerability_feed_format == "grype":
+        return _read_grype_vulnerability_feed(feed_path, payload)
+    raise ValueError(f"vulnerability feed format must be linwarden, trivy, or grype: {vulnerability_feed_format}")
 
 
 def _read_linwarden_vulnerability_feed(feed_path: Path, payload: object) -> tuple[PackageVulnerability, ...]:
@@ -607,6 +609,23 @@ def _read_trivy_vulnerability_feed(feed_path: Path, payload: object) -> tuple[Pa
     return tuple(vulnerabilities)
 
 
+def _read_grype_vulnerability_feed(feed_path: Path, payload: object) -> tuple[PackageVulnerability, ...]:
+    if not isinstance(payload, dict):
+        raise ValueError(f"vulnerability feed {feed_path}: grype root must be an object")
+
+    matches = payload.get("matches")
+    if not isinstance(matches, list):
+        raise ValueError(f"vulnerability feed {feed_path}: grype matches must be an array")
+
+    source = _grype_source(payload)
+    vulnerabilities: list[PackageVulnerability] = []
+    for index, match in enumerate(matches):
+        if not isinstance(match, dict):
+            raise ValueError(f"vulnerability feed {feed_path}: grype matches[{index}] must be an object")
+        vulnerabilities.append(_package_vulnerability_from_grype_match(feed_path, source, index, match))
+    return tuple(vulnerabilities)
+
+
 _VULNERABILITY_SEVERITIES = {"critical", "high", "medium", "low"}
 
 
@@ -665,6 +684,35 @@ def _package_vulnerability_from_trivy_entry(
     )
 
 
+def _package_vulnerability_from_grype_match(
+    feed_path: Path,
+    source: str,
+    index: int,
+    match: dict[str, object],
+) -> PackageVulnerability:
+    vulnerability = _required_grype_object(feed_path, index, match, "vulnerability")
+    artifact = _required_grype_object(feed_path, index, match, "artifact")
+    severity = _required_grype_string(feed_path, index, vulnerability, "severity").lower()
+    if severity == "negligible" or severity == "unknown":
+        severity = "low"
+    if severity not in _VULNERABILITY_SEVERITIES:
+        raise ValueError(
+            f"vulnerability feed {feed_path}: grype matches[{index}].vulnerability.severity must be "
+            "critical, high, medium, low, negligible, or unknown"
+        )
+
+    return PackageVulnerability(
+        package=_required_grype_string(feed_path, index, artifact, "name"),
+        installed_version=_required_grype_string(feed_path, index, artifact, "version"),
+        fixed_version=_grype_fixed_version(vulnerability),
+        vulnerability_id=_required_grype_string(feed_path, index, vulnerability, "id"),
+        severity=severity,
+        summary=_optional_grype_string(vulnerability, "description"),
+        url=_grype_reference_url(vulnerability),
+        source=f"{feed_path}#{source}" if source else str(feed_path),
+    )
+
+
 def _required_feed_string(feed_path: Path, index: int, entry: dict[str, object], key: str) -> str:
     value = entry.get(key)
     if not isinstance(value, str) or not value.strip():
@@ -712,3 +760,66 @@ def _trivy_reference_url(entry: dict[str, object]) -> str:
             if isinstance(reference, str) and reference.strip():
                 return reference.strip()
     return ""
+
+
+def _required_grype_object(
+    feed_path: Path,
+    index: int,
+    match: dict[str, object],
+    key: str,
+) -> dict[str, object]:
+    value = match.get(key)
+    if not isinstance(value, dict):
+        raise ValueError(f"vulnerability feed {feed_path}: grype matches[{index}].{key} must be an object")
+    return value
+
+
+def _required_grype_string(
+    feed_path: Path,
+    index: int,
+    entry: dict[str, object],
+    key: str,
+) -> str:
+    value = entry.get(key)
+    if not isinstance(value, str) or not value.strip():
+        raise ValueError(f"vulnerability feed {feed_path}: grype matches[{index}].{key} must be a non-empty string")
+    return value.strip()
+
+
+def _optional_grype_string(entry: dict[str, object], key: str) -> str:
+    value = entry.get(key, "")
+    return value.strip() if isinstance(value, str) else ""
+
+
+def _grype_fixed_version(vulnerability: dict[str, object]) -> str:
+    fix = vulnerability.get("fix")
+    if not isinstance(fix, dict):
+        return ""
+    versions = fix.get("versions")
+    if not isinstance(versions, list):
+        return ""
+    return ", ".join(version.strip() for version in versions if isinstance(version, str) and version.strip())
+
+
+def _grype_reference_url(vulnerability: dict[str, object]) -> str:
+    data_source = _optional_grype_string(vulnerability, "dataSource")
+    if data_source:
+        return data_source
+    urls = vulnerability.get("urls")
+    if isinstance(urls, list):
+        for url in urls:
+            if isinstance(url, str) and url.strip():
+                return url.strip()
+    return ""
+
+
+def _grype_source(payload: dict[str, object]) -> str:
+    source = payload.get("source")
+    if not isinstance(source, dict):
+        return ""
+    target = source.get("target")
+    if isinstance(target, dict):
+        user_input = _optional_grype_string(target, "userInput")
+        if user_input:
+            return user_input
+    return _optional_grype_string(source, "type")

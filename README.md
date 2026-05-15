@@ -81,7 +81,7 @@ linwarden profiles [--format markdown|json]
 
 linwarden scan [--root PATH] [--proc-root PATH] [--etc-root PATH] [--sys-root PATH]
                [--config PATH] [--format markdown|json|sarif]
-               [--vulnerability-feed PATH] [--vulnerability-feed-format linwarden|trivy]
+               [--vulnerability-feed PATH] [--vulnerability-feed-format linwarden|trivy|grype]
                [--sshd-mode static|effective|auto] [--sshd-binary PATH]
                [--sshd-match KEY=VALUE]
                [--output PATH]
@@ -101,6 +101,7 @@ linwarden scan --root /mnt/server-image --format json
 linwarden scan --proc-root /host/proc --etc-root /host/etc --sys-root /host/sys --format markdown
 linwarden scan --vulnerability-feed ./linwarden-vulnerabilities.json --format sarif
 linwarden scan --vulnerability-feed ./trivy-report.json --vulnerability-feed-format trivy --format sarif
+linwarden scan --vulnerability-feed ./grype-report.json --vulnerability-feed-format grype --format sarif
 ```
 
 ## Configuration

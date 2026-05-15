@@ -116,6 +116,20 @@ Use `vulnerability-feed-format: trivy` when the file is Trivy JSON output.
     upload-sarif: "true"
 ```
 
+Use `vulnerability-feed-format: grype` when the file is Grype JSON output.
+
+```yaml
+- name: Run Linwarden with Grype JSON
+  uses: kingkyylian/linwarden@v0.12.0
+  with:
+    root: container-root
+    vulnerability-feed: grype-report.json
+    vulnerability-feed-format: grype
+    format: sarif
+    fail-on: high
+    upload-sarif: "true"
+```
+
 ## Markdown Job Summary
 
 Use this workflow for operators who want the report directly in the Actions run.

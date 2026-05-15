@@ -44,6 +44,7 @@ class ActionMetadataTests(unittest.TestCase):
         self.assertIn("VULNERABILITY_FEED_FORMAT", text)
         self.assertIn("--vulnerability-feed", text)
         self.assertIn("--vulnerability-feed-format", text)
+        self.assertIn("linwarden, trivy, or grype", text)
 
     def test_github_actions_docs_use_the_composite_action(self) -> None:
         text = DOCS.read_text(encoding="utf-8")

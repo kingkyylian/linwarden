@@ -235,6 +235,42 @@ class ReporterAndCliTests(unittest.TestCase):
         )
         self.assertIn("LNX-PKG-004", {finding["rule_id"] for finding in payload["findings"]})
 
+    def test_cli_accepts_grype_package_vulnerability_feed(self) -> None:
+        out = StringIO()
+        err = StringIO()
+        feed = Path(__file__).parent / "fixtures" / "grype-vulnerability-report.json"
+
+        exit_code = main(
+            [
+                "scan",
+                "--root",
+                str(FIXTURE_ROOT),
+                "--vulnerability-feed",
+                str(feed),
+                "--vulnerability-feed-format",
+                "grype",
+                "--format",
+                "json",
+                "--fail-on",
+                "critical",
+            ],
+            stdout=out,
+            stderr=err,
+        )
+
+        payload = json.loads(out.getvalue())
+        self.assertEqual(exit_code, 2)
+        self.assertEqual(err.getvalue(), "")
+        self.assertEqual(len(payload["host"]["package_vulnerabilities"]), 2)
+        self.assertIn(
+            "CVE-2026-2001",
+            {finding["vulnerability_id"] for finding in payload["host"]["package_vulnerabilities"]},
+        )
+        self.assertNotIn(
+            "CVE-2026-IGNORED",
+            {finding["vulnerability_id"] for finding in payload["host"]["package_vulnerabilities"]},
+        )
+
     def test_cli_rejects_invalid_local_package_vulnerability_feed(self) -> None:
         out = StringIO()
         err = StringIO()
@@ -294,6 +330,7 @@ class ReporterAndCliTests(unittest.TestCase):
         self.assertIn('"vulnerabilities"', text)
         self.assertIn("--vulnerability-feed", text)
         self.assertIn("--vulnerability-feed-format trivy", text)
+        self.assertIn("--vulnerability-feed-format grype", text)
 
 
 if __name__ == "__main__":

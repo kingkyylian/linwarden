@@ -132,6 +132,15 @@ class ActionMetadataTests(unittest.TestCase):
         self.assertIn("if: github.event_name == 'workflow_dispatch'", text)
         self.assertIn("if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')", text)
 
+    def test_release_workflow_verifies_tag_version_before_release_outputs(self) -> None:
+        text = RELEASE_WORKFLOW.read_text(encoding="utf-8")
+
+        self.assertIn("Verify release version", text)
+        self.assertIn("python scripts/verify_release_version.py --ref-name \"$GITHUB_REF_NAME\" --dist-dir dist", text)
+        self.assertLess(text.index("Verify release version"), text.index("Upload release dry-run artifacts"))
+        self.assertLess(text.index("Verify release version"), text.index("Generate artifact attestations"))
+        self.assertLess(text.index("Verify release version"), text.index("Create GitHub release"))
+
     def test_release_docs_cover_pypi_trusted_publisher_setup_and_rollback(self) -> None:
         docs = RELEASE_DOCS.read_text(encoding="utf-8")
 
@@ -152,6 +161,14 @@ class ActionMetadataTests(unittest.TestCase):
         self.assertIn("release-dry-run-artifacts", docs)
         self.assertIn("does not create a GitHub release", docs)
         self.assertIn("does not publish to PyPI", docs)
+
+    def test_release_docs_cover_version_guard(self) -> None:
+        docs = RELEASE_DOCS.read_text(encoding="utf-8")
+
+        self.assertIn("Release Version Guard", docs)
+        self.assertIn("scripts/verify_release_version.py", docs)
+        self.assertIn("tag name matches `pyproject.toml`", docs)
+        self.assertIn("distribution filenames match that version", docs)
 
 
 if __name__ == "__main__":

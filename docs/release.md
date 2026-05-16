@@ -16,9 +16,10 @@ The release workflow validates the project, builds source and wheel artifacts, w
 3. Run `make package PYTHON=.venv/bin/python`.
 4. Run `python scripts/release_assets.py dist`.
 5. Confirm `dist/SHA256SUMS` contains only the intended release files.
-6. Push the version tag.
-7. Verify each published artifact attestation with `gh attestation verify`.
-8. Link the release notes to [github-actions.md](github-actions.md), [comparison.md](comparison.md), and [launch.md](launch.md).
+6. Run `python scripts/verify_release_version.py --ref-name v0.13.0 --dist-dir dist`.
+7. Push the version tag.
+8. Verify each published artifact attestation with `gh attestation verify`.
+9. Link the release notes to [github-actions.md](github-actions.md), [comparison.md](comparison.md), and [launch.md](launch.md).
 
 ## Release Dry Run
 
@@ -29,6 +30,10 @@ gh workflow run release.yml --repo kingkyylian/linwarden --ref main
 ```
 
 The dry run uploads `release-dry-run-artifacts` for inspection. It does not create a GitHub release, does not emit release attestations, and does not publish to PyPI. Tag pushes remain the only path that can create GitHub releases, attestations, or PyPI uploads.
+
+## Release Version Guard
+
+The tag release workflow runs `scripts/verify_release_version.py` before signing, attestations, GitHub release creation, or PyPI publishing. The guard checks that the tag name matches `pyproject.toml` and that distribution filenames match that version.
 
 ## Optional GPG Signing
 

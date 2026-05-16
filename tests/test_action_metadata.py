@@ -105,6 +105,31 @@ class ActionMetadataTests(unittest.TestCase):
         self.assertIn("for artifact in dist/*", docs)
         self.assertIn('gh attestation verify "$artifact" --repo kingkyylian/linwarden', docs)
 
+    def test_release_workflow_gates_pypi_publish_after_github_artifacts(self) -> None:
+        text = RELEASE_WORKFLOW.read_text(encoding="utf-8")
+
+        self.assertIn("publish-pypi:", text)
+        self.assertIn("needs: build", text)
+        self.assertIn("if: vars.PUBLISH_PYPI == 'true'", text)
+        self.assertIn("name: pypi", text)
+        self.assertIn("id-token: write", text)
+        self.assertIn("uses: actions/upload-artifact@v7", text)
+        self.assertIn("uses: actions/download-artifact@v7", text)
+        self.assertIn("uses: pypa/gh-action-pypi-publish@release/v1", text)
+        self.assertLess(text.index("Create GitHub release"), text.index("publish-pypi:"))
+
+    def test_release_docs_cover_pypi_trusted_publisher_setup_and_rollback(self) -> None:
+        docs = RELEASE_DOCS.read_text(encoding="utf-8")
+
+        self.assertIn("PyPI project: `linwarden`", docs)
+        self.assertIn("Owner: `kingkyylian`", docs)
+        self.assertIn("Repository: `linwarden`", docs)
+        self.assertIn("Workflow: `release.yml`", docs)
+        self.assertIn("Environment name: `pypi`", docs)
+        self.assertIn("Repository variable: `PUBLISH_PYPI=true`", docs)
+        self.assertIn("set `PUBLISH_PYPI=false` or remove the variable", docs)
+        self.assertIn("GitHub release artifacts are still produced by the `build` job", docs)
+
 
 if __name__ == "__main__":
     unittest.main()

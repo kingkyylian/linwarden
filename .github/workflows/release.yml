@@ -6,15 +6,17 @@ on:
       - "v*"
 
 permissions:
-  attestations: write
-  artifact-metadata: write
-  contents: write
-  id-token: write
+  contents: read
 
 jobs:
   build:
     name: Build release artifacts
     runs-on: ubuntu-latest
+    permissions:
+      attestations: write
+      artifact-metadata: write
+      contents: write
+      id-token: write
     steps:
       - name: Checkout
         uses: actions/checkout@v6
@@ -42,9 +44,15 @@ jobs:
       - name: Build package
         run: python -m build
 
-      - name: Publish to PyPI
-        if: vars.PUBLISH_PYPI == 'true'
-        uses: pypa/gh-action-pypi-publish@release/v1
+      - name: Upload Python package distributions
+        uses: actions/upload-artifact@v7
+        with:
+          name: python-package-distributions
+          path: |
+            dist/*.tar.gz
+            dist/*.whl
+          if-no-files-found: error
+          retention-days: 7
 
       - name: Generate release checksums
         run: python scripts/release_assets.py dist
@@ -75,3 +83,24 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: gh release create "$GITHUB_REF_NAME" dist/* --generate-notes --title "$GITHUB_REF_NAME"
+
+  publish-pypi:
+    name: Publish to PyPI
+    needs: build
+    if: vars.PUBLISH_PYPI == 'true'
+    runs-on: ubuntu-latest
+    environment:
+      name: pypi
+      url: https://pypi.org/p/linwarden
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - name: Download Python package distributions
+        uses: actions/download-artifact@v7
+        with:
+          name: python-package-distributions
+          path: dist
+
+      - name: Publish to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1

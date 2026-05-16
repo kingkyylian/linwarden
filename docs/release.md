@@ -45,6 +45,30 @@ The attestations complement `SHA256SUMS` and optional `SHA256SUMS.asc`; they do 
 
 ## Optional PyPI Publishing
 
-Configure PyPI trusted publishing for this repository, then set repository variable `PUBLISH_PYPI=true`.
+The release workflow has a separate `publish-pypi` job. GitHub release artifacts are still produced by the `build` job before PyPI publishing starts.
 
-Without that variable, the workflow only creates GitHub release artifacts.
+Configure PyPI trusted publishing with these values:
+
+- PyPI project: `linwarden`
+- Owner: `kingkyylian`
+- Repository: `linwarden`
+- Workflow: `release.yml`
+- Environment name: `pypi`
+
+If the PyPI project does not exist yet, create a pending publisher with the same values so the first trusted publish can create the project. If the project already exists, add a trusted publisher from the existing project's publishing settings.
+
+Then configure the GitHub repository environment and variable:
+
+1. Create or review the GitHub Actions environment named `pypi`.
+2. Add any required reviewers or deployment protections on that environment.
+3. Repository variable: `PUBLISH_PYPI=true`.
+
+Without `PUBLISH_PYPI=true`, the `publish-pypi` job is skipped and the workflow only creates GitHub release artifacts. To roll back PyPI publishing, set `PUBLISH_PYPI=false` or remove the variable; do not add a PyPI API token or password secret.
+
+After enabling, verify the next tag release by confirming:
+
+- the `build` job created the GitHub release, checksums, optional signature, and attestations
+- the `publish-pypi` job ran under the `pypi` environment
+- PyPI shows the uploaded source distribution and wheel for the release version
+
+References: [PyPI trusted publisher setup](https://docs.pypi.org/trusted-publishers/adding-a-publisher/), [pending publisher setup](https://docs.pypi.org/trusted-publishers/creating-a-project-through-oidc/), and [publishing with a trusted publisher](https://docs.pypi.org/trusted-publishers/using-a-publisher/).

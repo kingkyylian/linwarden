@@ -20,6 +20,16 @@ The release workflow validates the project, builds source and wheel artifacts, w
 7. Verify each published artifact attestation with `gh attestation verify`.
 8. Link the release notes to [github-actions.md](github-actions.md), [comparison.md](comparison.md), and [launch.md](launch.md).
 
+## Release Dry Run
+
+Use the manual workflow trigger to build and checksum release artifacts without creating a GitHub release or publishing to PyPI:
+
+```bash
+gh workflow run release.yml --repo kingkyylian/linwarden --ref main
+```
+
+The dry run uploads `release-dry-run-artifacts` for inspection. It does not create a GitHub release, does not emit release attestations, and does not publish to PyPI. Tag pushes remain the only path that can create GitHub releases, attestations, or PyPI uploads.
+
 ## Optional GPG Signing
 
 Configure these repository secrets to add a detached signature for `SHA256SUMS`:

@@ -4,6 +4,13 @@ on:
   push:
     tags:
       - "v*"
+  workflow_dispatch:
+    inputs:
+      dry-run:
+        description: Build release artifacts without creating GitHub or PyPI releases.
+        type: boolean
+        required: false
+        default: true
 
 permissions:
   contents: read
@@ -57,7 +64,17 @@ jobs:
       - name: Generate release checksums
         run: python scripts/release_assets.py dist
 
+      - name: Upload release dry-run artifacts
+        if: github.event_name == 'workflow_dispatch'
+        uses: actions/upload-artifact@v7
+        with:
+          name: release-dry-run-artifacts
+          path: dist/*
+          if-no-files-found: error
+          retention-days: 7
+
       - name: Sign checksum manifest
+        if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
         shell: bash
         env:
           GPG_PRIVATE_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
@@ -75,11 +92,13 @@ jobs:
           fi
 
       - name: Generate artifact attestations
+        if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
         uses: actions/attest@v4
         with:
           subject-path: dist/*
 
       - name: Create GitHub release
+        if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
         env:
           GH_TOKEN: ${{ github.token }}
         run: gh release create "$GITHUB_REF_NAME" dist/* --generate-notes --title "$GITHUB_REF_NAME"
@@ -87,7 +106,7 @@ jobs:
   publish-pypi:
     name: Publish to PyPI
     needs: build
-    if: vars.PUBLISH_PYPI == 'true'
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v') && vars.PUBLISH_PYPI == 'true'
     runs-on: ubuntu-latest
     environment:
       name: pypi

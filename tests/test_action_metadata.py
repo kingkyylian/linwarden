@@ -110,13 +110,27 @@ class ActionMetadataTests(unittest.TestCase):
 
         self.assertIn("publish-pypi:", text)
         self.assertIn("needs: build", text)
-        self.assertIn("if: vars.PUBLISH_PYPI == 'true'", text)
+        self.assertIn(
+            "if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v') && vars.PUBLISH_PYPI == 'true'",
+            text,
+        )
         self.assertIn("name: pypi", text)
         self.assertIn("id-token: write", text)
         self.assertIn("uses: actions/upload-artifact@v7", text)
         self.assertIn("uses: actions/download-artifact@v7", text)
         self.assertIn("uses: pypa/gh-action-pypi-publish@release/v1", text)
         self.assertLess(text.index("Create GitHub release"), text.index("publish-pypi:"))
+
+    def test_release_workflow_supports_manual_dry_run_without_publishing(self) -> None:
+        text = RELEASE_WORKFLOW.read_text(encoding="utf-8")
+
+        self.assertIn("workflow_dispatch:", text)
+        self.assertIn("dry-run:", text)
+        self.assertIn("default: true", text)
+        self.assertIn("Upload release dry-run artifacts", text)
+        self.assertIn("name: release-dry-run-artifacts", text)
+        self.assertIn("if: github.event_name == 'workflow_dispatch'", text)
+        self.assertIn("if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')", text)
 
     def test_release_docs_cover_pypi_trusted_publisher_setup_and_rollback(self) -> None:
         docs = RELEASE_DOCS.read_text(encoding="utf-8")
@@ -129,6 +143,15 @@ class ActionMetadataTests(unittest.TestCase):
         self.assertIn("Repository variable: `PUBLISH_PYPI=true`", docs)
         self.assertIn("set `PUBLISH_PYPI=false` or remove the variable", docs)
         self.assertIn("GitHub release artifacts are still produced by the `build` job", docs)
+
+    def test_release_docs_cover_manual_dry_run(self) -> None:
+        docs = RELEASE_DOCS.read_text(encoding="utf-8")
+
+        self.assertIn("## Release Dry Run", docs)
+        self.assertIn("gh workflow run release.yml", docs)
+        self.assertIn("release-dry-run-artifacts", docs)
+        self.assertIn("does not create a GitHub release", docs)
+        self.assertIn("does not publish to PyPI", docs)
 
 
 if __name__ == "__main__":

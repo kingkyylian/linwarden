@@ -427,6 +427,49 @@ def evaluate_snapshot(snapshot: HostSnapshot) -> list[Finding]:
             )
         )
 
+    for signal in snapshot.container_runtime_signals:
+        if signal.signal == "tcp_api":
+            findings.append(
+                Finding(
+                    rule_id="LNX-CTR-001",
+                    severity="high",
+                    title="Container runtime API is bound to non-loopback TCP",
+                    category="containers",
+                    evidence=f"{signal.runtime} API endpoint {signal.evidence} from {signal.source}",
+                    impact=(
+                        "An exposed container runtime API can let remote clients control containers, "
+                        "mount host paths, or alter workload state."
+                    ),
+                    remediation=(
+                        "Bind the runtime API to a Unix socket or loopback-only endpoint, and use SSH or "
+                        "mutual TLS if remote access is required."
+                    ),
+                    references=(
+                        "https://docs.docker.com/engine/security/https/",
+                        "https://docs.podman.io/en/latest/markdown/podman-system-service.1.html",
+                    ),
+                )
+            )
+        elif signal.signal == "docker_group_members":
+            findings.append(
+                Finding(
+                    rule_id="LNX-CTR-002",
+                    severity="high",
+                    title="Docker group grants daemon-level access to users",
+                    category="containers",
+                    evidence=f"{signal.evidence} from {signal.source}",
+                    impact=(
+                        "Members of the docker group can control the Docker daemon and can often reach "
+                        "host-root equivalent privileges."
+                    ),
+                    remediation=(
+                        "Remove unnecessary users from the docker group; prefer sudo auditing or rootless "
+                        "Docker where non-root operation is required."
+                    ),
+                    references=("https://docs.docker.com/engine/install/linux-postinstall/",),
+                )
+            )
+
     return findings
 
 

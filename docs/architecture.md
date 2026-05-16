@@ -45,6 +45,7 @@ The collector reads files that are normally world-readable on Linux hosts:
 - `/etc/firewalld/firewalld.conf` and firewalld systemd enablement markers when present
 - `/etc/nftables.conf` and nftables systemd enablement markers when present
 - enabled systemd service markers under `/etc/systemd/system/*.wants/*.service` and matching unit files when present
+- container runtime posture markers from `/etc/docker/daemon.json`, `/etc/group`, and enabled Docker or Podman systemd units when present
 - an optional local package vulnerability JSON feed when `--vulnerability-feed` is provided
 
 SSH collection defaults to static file parsing. When `--sshd-mode effective` is selected, Linwarden executes `sshd -T -f <config>` and records `sshd_source` as `effective`.
@@ -58,6 +59,8 @@ Bridge posture detection is static. It reads bridge interfaces from sysfs, bridg
 Package vulnerability feed ingestion is explicit and local-only. The CLI reads the JSON file provided through `--vulnerability-feed`, validates the selected `--vulnerability-feed-format`, and converts each entry into normal package findings. Normal scans do not read vulnerability feeds unless the option is present.
 
 Systemd service exposure detection is static. It follows enabled service markers inside the scanned root and flags common wildcard bind options such as `--bind 0.0.0.0` or `--listen [::]:PORT`; it does not call `systemctl` or inspect live sockets.
+
+Container runtime posture detection is static and conservative. It flags explicit Docker or Podman non-loopback TCP API endpoints from configuration or enabled unit files, and explicit non-root Docker group members from `/etc/group`. It does not call Docker, Podman, `systemctl`, or inspect live sockets.
 
 Missing files are treated as absent data, not fatal errors. This keeps the CLI usable in containers, rescue mounts, and partial forensic copies.
 

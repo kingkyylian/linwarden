@@ -2,11 +2,11 @@
 
 ## Near Term
 
-- Refine profile suppressions from real-world server, workstation, router, and container fixture feedback.
+- Configure PyPI trusted publishing.
 
 ## Later
 
-- Container runtime posture checks.
+- Add more static container runtime signals only when evidence is reliable and fixture-backed.
 
 ## Non-Goals
 

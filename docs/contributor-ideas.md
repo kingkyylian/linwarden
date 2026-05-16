@@ -10,8 +10,6 @@ No good-first issues are currently scoped. Keep new candidates small, fixture-ba
 
 | Issue | Area | Idea | Acceptance criteria |
 | --- | --- | --- | --- |
-| [#15](https://github.com/kingkyylian/linwarden/issues/15) | Profiles | Refine profile suppressions using fixture feedback. | Any suppression change has fixture-backed tests, explicit reasons, and updated configuration docs. |
-| [#16](https://github.com/kingkyylian/linwarden/issues/16) | Container posture | Add rootless container runtime posture checks. | New rules include stable IDs, tests, docs, and conservative handling for missing runtime files. |
 | [#17](https://github.com/kingkyylian/linwarden/issues/17) | Release | Configure PyPI trusted publishing. | Tag releases keep GitHub artifacts working and publish to PyPI only after trusted publishing is configured. |
 
 ## Rule Quality Bar

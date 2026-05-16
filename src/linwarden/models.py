@@ -75,6 +75,14 @@ class PackageVulnerability:
 
 
 @dataclass(frozen=True)
+class ContainerRuntimeSignal:
+    runtime: str
+    signal: str
+    evidence: str
+    source: str
+
+
+@dataclass(frozen=True)
 class HostSnapshot:
     hostname: str
     os_release: dict[str, str]
@@ -92,6 +100,7 @@ class HostSnapshot:
     bridge_interfaces: tuple[BridgeInterface, ...]
     systemd_service_exposures: tuple[SystemdServiceExposure, ...]
     package_vulnerabilities: tuple[PackageVulnerability, ...]
+    container_runtime_signals: tuple[ContainerRuntimeSignal, ...]
 
 
 @dataclass(frozen=True)

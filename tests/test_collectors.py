@@ -230,6 +230,54 @@ class CollectorTests(unittest.TestCase):
         self.assertEqual(snapshot.bridge_interfaces[0].name, "br0")
         self.assertEqual(snapshot.bridge_interfaces[0].source, str(bridge / "bridge"))
 
+    def test_collects_container_runtime_static_posture_signals(self) -> None:
+        with TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            etc = root / "etc"
+            docker_config = etc / "docker" / "daemon.json"
+            docker_unit = etc / "systemd" / "system" / "multi-user.target.wants" / "docker.service"
+            podman_unit = etc / "systemd" / "system" / "multi-user.target.wants" / "podman.service"
+            podman_socket = etc / "systemd" / "system" / "sockets.target.wants" / "podman.socket"
+            etc.mkdir(parents=True)
+            docker_config.parent.mkdir(parents=True)
+            docker_unit.parent.mkdir(parents=True)
+            podman_socket.parent.mkdir(parents=True)
+            (etc / "os-release").write_text('ID="debian"\n', encoding="utf-8")
+            (etc / "group").write_text(
+                "root:x:0:\n"
+                "docker:x:998:deploy,ci-runner\n",
+                encoding="utf-8",
+            )
+            docker_config.write_text(
+                '{"hosts": ["unix:///var/run/docker.sock", "tcp://0.0.0.0:2375", "tcp://127.0.0.1:2376"]}\n',
+                encoding="utf-8",
+            )
+            docker_unit.write_text(
+                "[Service]\nExecStart=/usr/bin/dockerd --host tcp://192.0.2.10:2376\n",
+                encoding="utf-8",
+            )
+            podman_unit.write_text(
+                "[Service]\nExecStart=/usr/bin/podman system service tcp://[::]:8080\n",
+                encoding="utf-8",
+            )
+            podman_socket.write_text(
+                "[Socket]\nListenStream=0.0.0.0:8081\n",
+                encoding="utf-8",
+            )
+
+            snapshot = collect_host_snapshot(root=root, proc_root=root / "proc", etc_root=etc)
+
+        signals = snapshot.container_runtime_signals
+        self.assertEqual(len(signals), 5)
+        by_evidence = {signal.evidence: signal for signal in signals}
+        self.assertEqual(by_evidence["tcp://0.0.0.0:2375"].runtime, "docker")
+        self.assertEqual(by_evidence["tcp://0.0.0.0:2375"].signal, "tcp_api")
+        self.assertEqual(by_evidence["tcp://192.0.2.10:2376"].source, str(docker_unit))
+        self.assertEqual(by_evidence["tcp://[::]:8080"].runtime, "podman")
+        self.assertEqual(by_evidence["tcp://0.0.0.0:8081"].source, str(podman_socket))
+        self.assertEqual(by_evidence["docker group members: deploy, ci-runner"].signal, "docker_group_members")
+        self.assertNotIn("tcp://127.0.0.1:2376", by_evidence)
+
     def test_collects_package_vulnerabilities_from_local_feed(self) -> None:
         feed = Path(__file__).parent / "fixtures" / "vulnerability-feed.json"
 

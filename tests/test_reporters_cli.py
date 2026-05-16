@@ -23,13 +23,14 @@ class ReporterAndCliTests(unittest.TestCase):
         )
         payload = json.loads(render_json(snapshot, evaluate_snapshot(snapshot)))
 
-        self.assertEqual(payload["schema_version"], "1.6")
+        self.assertEqual(payload["schema_version"], "1.7")
         self.assertEqual(payload["host"]["hostname"], "fixture-box")
         self.assertEqual(payload["host"]["sshd_match_context"], [])
         self.assertEqual(payload["host"]["package_status"]["metadata_source"], "not found")
         self.assertEqual(payload["host"]["bridge_interfaces"], [])
         self.assertEqual(payload["host"]["package_vulnerabilities"], [])
         self.assertEqual(payload["host"]["systemd_service_exposures"], [])
+        self.assertEqual(payload["host"]["container_runtime_signals"], [])
         self.assertEqual(payload["summary"]["score"], 0)
         self.assertEqual(payload["findings"][0]["rule_id"], "LNX-SSH-001")
         self.assertEqual(payload["suppressed_findings"], [])
@@ -62,6 +63,25 @@ class ReporterAndCliTests(unittest.TestCase):
             payload["runs"][0]["results"][0]["locations"][0]["physicalLocation"]["artifactLocation"]["uri"],
             "docs/rules.md",
         )
+
+    def test_renders_container_runtime_signals_in_json_and_sarif(self) -> None:
+        with TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            etc = root / "etc"
+            docker_config = etc / "docker" / "daemon.json"
+            docker_config.parent.mkdir(parents=True)
+            (etc / "os-release").write_text('ID="debian"\n', encoding="utf-8")
+            docker_config.write_text('{"hosts": ["tcp://0.0.0.0:2375"]}\n', encoding="utf-8")
+
+            snapshot = collect_host_snapshot(root=root, proc_root=root / "proc", etc_root=etc)
+
+        findings = evaluate_snapshot(snapshot)
+        json_payload = json.loads(render_json(snapshot, findings))
+        sarif_payload = json.loads(render_sarif(snapshot, findings))
+
+        self.assertEqual(json_payload["host"]["container_runtime_signals"][0]["runtime"], "docker")
+        self.assertIn("LNX-CTR-001", {finding["rule_id"] for finding in json_payload["findings"]})
+        self.assertIn("LNX-CTR-001", {result["ruleId"] for result in sarif_payload["runs"][0]["results"]})
 
     def test_renders_configured_suppressions_transparently(self) -> None:
         snapshot = collect_host_snapshot(

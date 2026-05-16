@@ -1,12 +1,12 @@
 # JSON Report Schema
 
-Linwarden JSON reports are intended for CI and fleet ingestion. The current schema version is `1.6`.
+Linwarden JSON reports are intended for CI and fleet ingestion. The current schema version is `1.7`.
 
 ## Top-Level Shape
 
 ```json
 {
-  "schema_version": "1.6",
+  "schema_version": "1.7",
   "host": {},
   "summary": {},
   "findings": [],
@@ -32,6 +32,7 @@ Linwarden JSON reports are intended for CI and fleet ingestion. The current sche
 | `firewall_status` | object | Host firewall provider and enabled state when known. |
 | `bridge_interfaces` | array | Linux bridge interfaces detected from sysfs. |
 | `systemd_service_exposures` | array | Enabled systemd services with static wildcard bind evidence. |
+| `container_runtime_signals` | array | Static container runtime posture signals when visible from local files. |
 | `package_vulnerabilities` | array | Package vulnerabilities loaded from an explicit local feed. |
 
 ## Package Status
@@ -64,6 +65,15 @@ Linwarden JSON reports are intended for CI and fleet ingestion. The current sche
 | `source` | string | Unit file path used as evidence. |
 | `enabled_source` | string | Enablement marker path used as evidence. |
 | `exec_start` | string | `ExecStart` line that carried the bind evidence. |
+
+## Container Runtime Signal
+
+| Field | Type | Description |
+| --- | --- | --- |
+| `runtime` | string | Runtime name such as `docker` or `podman`. |
+| `signal` | string | Signal type such as `tcp_api` or `docker_group_members`. |
+| `evidence` | string | Static evidence read from the scanned root. |
+| `source` | string | File path used as evidence. |
 
 ## Package Vulnerability
 

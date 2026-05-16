@@ -9,9 +9,11 @@ import subprocess
 import time
 from pathlib import Path
 from typing import Optional, Sequence, Union
+from urllib.parse import urlparse
 
 from .models import (
     BridgeInterface,
+    ContainerRuntimeSignal,
     FirewallStatus,
     HostSnapshot,
     PackageStatus,
@@ -113,6 +115,7 @@ def collect_host_snapshot(
         bridge_interfaces=_read_bridge_interfaces(sys_path, proc_path),
         systemd_service_exposures=_read_systemd_service_exposures(root_path, etc_path),
         package_vulnerabilities=_read_package_vulnerabilities(vulnerability_feed, vulnerability_feed_format),
+        container_runtime_signals=_read_container_runtime_signals(root_path, etc_path),
     )
 
 
@@ -386,16 +389,139 @@ def _read_systemd_service_exposures(root: Path, etc_root: Path) -> tuple[Systemd
     return tuple(exposures)
 
 
+def _read_container_runtime_signals(root: Path, etc_root: Path) -> tuple[ContainerRuntimeSignal, ...]:
+    signals: list[ContainerRuntimeSignal] = []
+    signals.extend(_read_docker_daemon_json_signals(etc_root / "docker" / "daemon.json"))
+    signals.extend(_read_docker_group_signals(etc_root / "group"))
+    signals.extend(_read_container_runtime_systemd_signals(root, etc_root))
+    return tuple(signals)
+
+
+def _read_docker_daemon_json_signals(path: Path) -> tuple[ContainerRuntimeSignal, ...]:
+    text = read_text(path)
+    if not text:
+        return ()
+    try:
+        payload = json.loads(text)
+    except json.JSONDecodeError:
+        return ()
+    if not isinstance(payload, dict):
+        return ()
+    hosts = payload.get("hosts")
+    if not isinstance(hosts, list):
+        return ()
+    signals: list[ContainerRuntimeSignal] = []
+    for host in hosts:
+        if isinstance(host, str) and _is_external_tcp_endpoint(host):
+            signals.append(
+                ContainerRuntimeSignal(
+                    runtime="docker",
+                    signal="tcp_api",
+                    evidence=host.strip(),
+                    source=str(path),
+                )
+            )
+    return tuple(signals)
+
+
+def _read_docker_group_signals(path: Path) -> tuple[ContainerRuntimeSignal, ...]:
+    for raw_line in read_text(path).splitlines():
+        parts = raw_line.split(":")
+        if len(parts) < 4 or parts[0] != "docker":
+            continue
+        members = tuple(
+            member.strip()
+            for member in parts[3].split(",")
+            if member.strip() and member.strip() != "root"
+        )
+        if not members:
+            return ()
+        return (
+            ContainerRuntimeSignal(
+                runtime="docker",
+                signal="docker_group_members",
+                evidence=f"docker group members: {', '.join(members)}",
+                source=str(path),
+            ),
+        )
+    return ()
+
+
+def _read_container_runtime_systemd_signals(root: Path, etc_root: Path) -> tuple[ContainerRuntimeSignal, ...]:
+    signals: list[ContainerRuntimeSignal] = []
+    runtime_units = {
+        "docker.service": "docker",
+        "podman.service": "podman",
+        "podman.socket": "podman",
+    }
+    for marker in _enabled_systemd_unit_markers(etc_root):
+        runtime = runtime_units.get(marker.name)
+        if runtime is None:
+            continue
+        unit_text, unit_source = _read_systemd_unit_text(root, etc_root, marker.name, marker)
+        if not unit_text:
+            continue
+        for endpoint in _container_runtime_tcp_endpoints(unit_text):
+            if _is_external_tcp_endpoint(endpoint):
+                signals.append(
+                    ContainerRuntimeSignal(
+                        runtime=runtime,
+                        signal="tcp_api",
+                        evidence=endpoint,
+                        source=unit_source,
+                    )
+                )
+    return tuple(signals)
+
+
+def _container_runtime_tcp_endpoints(unit_text: str) -> tuple[str, ...]:
+    endpoints: list[str] = []
+    for exec_start in _unit_values(unit_text, "ExecStart", ("service",)):
+        parts = _shlex_split(exec_start)
+        for index, part in enumerate(parts):
+            if part in {"-H", "--host"} and index + 1 < len(parts):
+                endpoints.append(parts[index + 1])
+            elif part.startswith("-Htcp://"):
+                endpoints.append(part[2:])
+            elif part.startswith("--host=tcp://"):
+                endpoints.append(part.split("=", 1)[1])
+            elif part.startswith("tcp://"):
+                endpoints.append(part)
+    for listen_stream in _unit_values(unit_text, "ListenStream", ("socket",)):
+        value = listen_stream.strip()
+        if value.startswith("tcp://"):
+            endpoints.append(value)
+        elif ":" in value and not value.startswith("/"):
+            endpoints.append(f"tcp://{value}")
+    return tuple(dict.fromkeys(endpoints))
+
+
+def _shlex_split(value: str) -> list[str]:
+    try:
+        return shlex.split(value)
+    except ValueError:
+        return value.split()
+
+
+def _is_external_tcp_endpoint(endpoint: str) -> bool:
+    value = endpoint.strip()
+    if not value.startswith("tcp://"):
+        return False
+    parsed = urlparse(value)
+    host = parsed.hostname
+    if host is None:
+        return False
+    return host not in {"localhost", "127.0.0.1", "::1"}
+
+
 def _enabled_systemd_service_markers(etc_root: Path) -> tuple[Path, ...]:
+    return tuple(path for path in _enabled_systemd_unit_markers(etc_root) if path.name.endswith(".service"))
+
+
+def _enabled_systemd_unit_markers(etc_root: Path) -> tuple[Path, ...]:
     system_root = etc_root / "systemd" / "system"
     try:
-        return tuple(
-            sorted(
-                path
-                for path in system_root.glob("*.wants/*.service")
-                if _path_exists_or_symlink(path)
-            )
-        )
+        return tuple(sorted(path for path in system_root.glob("*.wants/*") if _path_exists_or_symlink(path)))
     except OSError:
         return ()
 
@@ -505,16 +631,20 @@ def _external_bind_value(value: str) -> Optional[str]:
 
 
 def _service_values(unit_text: str, key: str) -> tuple[str, ...]:
+    return _unit_values(unit_text, key, ("service",))
+
+
+def _unit_values(unit_text: str, key: str, sections: tuple[str, ...]) -> tuple[str, ...]:
     values: list[str] = []
-    in_service = False
+    in_target_section = False
     for raw_line in unit_text.splitlines():
         line = raw_line.strip()
         if not line or line.startswith("#"):
             continue
         if line.startswith("[") and line.endswith("]"):
-            in_service = line.lower() == "[service]"
+            in_target_section = line[1:-1].strip().lower() in sections
             continue
-        if not in_service or "=" not in line:
+        if not in_target_section or "=" not in line:
             continue
         raw_key, value = line.split("=", 1)
         if raw_key.strip().lower() == key.lower() and value.strip():

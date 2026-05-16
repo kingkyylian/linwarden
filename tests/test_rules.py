@@ -139,6 +139,29 @@ class RuleTests(unittest.TestCase):
 
         self.assertNotIn("LNX-NET-005", {finding.rule_id for finding in evaluate_snapshot(snapshot)})
 
+    def test_flags_container_runtime_api_and_docker_group_exposure(self) -> None:
+        with TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            etc = root / "etc"
+            docker_config = etc / "docker" / "daemon.json"
+            etc.mkdir(parents=True)
+            docker_config.parent.mkdir(parents=True)
+            (etc / "os-release").write_text('ID="debian"\n', encoding="utf-8")
+            (etc / "group").write_text("docker:x:998:deploy\n", encoding="utf-8")
+            docker_config.write_text('{"hosts": ["tcp://0.0.0.0:2375"]}\n', encoding="utf-8")
+
+            snapshot = collect_host_snapshot(root=root, proc_root=root / "proc", etc_root=etc)
+
+        by_rule = {finding.rule_id: finding for finding in evaluate_snapshot(snapshot)}
+
+        self.assertEqual(by_rule["LNX-CTR-001"].severity, "high")
+        self.assertIn("docker", by_rule["LNX-CTR-001"].evidence)
+        self.assertIn("0.0.0.0", by_rule["LNX-CTR-001"].evidence)
+        self.assertIn("Unix socket", by_rule["LNX-CTR-001"].remediation)
+        self.assertEqual(by_rule["LNX-CTR-002"].severity, "high")
+        self.assertIn("deploy", by_rule["LNX-CTR-002"].evidence)
+        self.assertIn("docker group", by_rule["LNX-CTR-002"].remediation)
+
     def test_flags_package_vulnerabilities_from_local_feed(self) -> None:
         feed = Path(__file__).parent / "fixtures" / "vulnerability-feed.json"
         snapshot = collect_host_snapshot(

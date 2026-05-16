@@ -193,3 +193,23 @@ Linwarden currently reads UFW config state directly and infers firewalld or nfta
 - Remediation: Review whether external listening is required; bind to `127.0.0.1` or `::1` when only local access is needed.
 
 Linwarden follows enabled service markers under `/etc/systemd/system/*.wants/*.service` inside the scanned root. Detection is static and intentionally conservative: it looks for common bind/listen options that carry wildcard addresses such as `0.0.0.0` or `[::]`. It does not call `systemctl` or inspect live sockets.
+
+## Container Runtime Rules
+
+### LNX-CTR-001: Container runtime API is bound to non-loopback TCP
+
+- Severity: high
+- Evidence: Docker or Podman TCP endpoint from `daemon.json` or enabled systemd unit files.
+- Impact: A reachable runtime API can let remote clients control containers, mount host paths, or alter workload state.
+- Remediation: Bind runtime APIs to Unix sockets or loopback-only endpoints; use SSH or mutual TLS for required remote access.
+
+Linwarden currently checks `/etc/docker/daemon.json` `hosts` entries and enabled Docker or Podman systemd units for `tcp://` endpoints whose host is not loopback. Missing runtime files are treated as unknown, not safe.
+
+### LNX-CTR-002: Docker group grants daemon-level access to users
+
+- Severity: high
+- Evidence: non-root members listed in `/etc/group` for the `docker` group.
+- Impact: Docker group members can control the Docker daemon and can often reach host-root equivalent privileges.
+- Remediation: Remove unnecessary users from the `docker` group; prefer sudo auditing or rootless Docker where non-root operation is required.
+
+Linwarden only reports explicit members listed in the `docker` group entry. It does not infer nested directory service groups or live socket permissions.

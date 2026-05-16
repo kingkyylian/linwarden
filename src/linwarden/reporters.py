@@ -16,7 +16,7 @@ def render_json(
     suppressed_findings: tuple[SuppressedFinding, ...] = (),
 ) -> str:
     payload = {
-        "schema_version": "1.6",
+        "schema_version": "1.7",
         "host": _host_payload(snapshot),
         "summary": asdict(summarize_findings(list(findings))),
         "findings": [asdict(finding) for finding in findings],
@@ -180,6 +180,7 @@ def _host_payload(snapshot: HostSnapshot) -> dict[str, object]:
         "bridge_interfaces": [asdict(bridge) for bridge in snapshot.bridge_interfaces],
         "systemd_service_exposures": [asdict(exposure) for exposure in snapshot.systemd_service_exposures],
         "package_vulnerabilities": [asdict(vulnerability) for vulnerability in snapshot.package_vulnerabilities],
+        "container_runtime_signals": [asdict(signal) for signal in snapshot.container_runtime_signals],
     }
 
 

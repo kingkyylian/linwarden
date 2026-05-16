@@ -33,6 +33,7 @@ Linwarden is not a CIS or STIG replacement. It is the lightweight first pass tha
 - Package update and host firewall posture signals where rootless files expose them.
 - Package metadata freshness checks for common package manager cache markers.
 - Bridge interface and bridge firewall hook posture checks for container hosts.
+- Static container runtime posture checks for exposed Docker or Podman APIs and Docker group membership.
 - Optional package vulnerability findings from a local JSON feed.
 - Release checksum manifests with optional detached GPG signatures.
 - Severity scoring with `critical`, `high`, `medium`, and `low` buckets.
@@ -168,6 +169,8 @@ Suppressed findings remain visible in JSON and Markdown reports. SARIF output in
 | `LNX-PKG-004` | feed severity | Packages | A local vulnerability feed reports an affected package. |
 | `LNX-FW-001` | medium | Firewall | A known host firewall is disabled. |
 | `LNX-SVC-001` | medium | Services | An enabled systemd service appears externally bound. |
+| `LNX-CTR-001` | high | Containers | A container runtime API is bound to non-loopback TCP. |
+| `LNX-CTR-002` | high | Containers | The Docker group grants daemon-level access to non-root users. |
 
 Rule details live in [docs/rules.md](docs/rules.md).
 
@@ -239,6 +242,7 @@ Linwarden is read-only by default. It does not modify host state, load kernel mo
 - Bridge posture checks rely on procfs and sysfs files inside the scanned root; missing bridge data is treated as unknown.
 - Firewalld and nftables service state is inferred from systemd enablement markers when present; config-only detection leaves enabled state unknown.
 - Enabled systemd service exposure detection is static and only flags common wildcard bind options in service unit `ExecStart` lines.
+- Container runtime posture checks only report explicit static evidence from config, group, or enabled unit files; missing runtime files are unknown, not safe.
 - Missing files are treated as absent data so scans can run in containers and fixture roots.
 - Linwarden is a hardening triage tool, not a full CIS or DISA STIG compliance scanner.
 
@@ -246,8 +250,7 @@ Please report vulnerabilities using [SECURITY.md](SECURITY.md).
 
 ## Roadmap
 
-- Container runtime posture checks.
-- Profile suppression refinement from distro fixture feedback.
+- PyPI trusted publishing.
 
 Contributor-ready ideas live in [docs/contributor-ideas.md](docs/contributor-ideas.md).
 

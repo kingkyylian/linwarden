@@ -271,6 +271,39 @@ class ReporterAndCliTests(unittest.TestCase):
             {finding["vulnerability_id"] for finding in payload["host"]["package_vulnerabilities"]},
         )
 
+    def test_cli_accepts_osv_package_vulnerability_feed(self) -> None:
+        out = StringIO()
+        err = StringIO()
+        feed = Path(__file__).parent / "fixtures" / "osv-vulnerability-report.json"
+
+        exit_code = main(
+            [
+                "scan",
+                "--root",
+                str(FIXTURE_ROOT),
+                "--vulnerability-feed",
+                str(feed),
+                "--vulnerability-feed-format",
+                "osv",
+                "--format",
+                "json",
+                "--fail-on",
+                "critical",
+            ],
+            stdout=out,
+            stderr=err,
+        )
+
+        payload = json.loads(out.getvalue())
+        self.assertEqual(exit_code, 2)
+        self.assertEqual(err.getvalue(), "")
+        self.assertEqual(len(payload["host"]["package_vulnerabilities"]), 2)
+        self.assertIn(
+            "GHSA-2026-3001",
+            {finding["vulnerability_id"] for finding in payload["host"]["package_vulnerabilities"]},
+        )
+        self.assertIn("LNX-PKG-004", {finding["rule_id"] for finding in payload["findings"]})
+
     def test_cli_rejects_invalid_local_package_vulnerability_feed(self) -> None:
         out = StringIO()
         err = StringIO()
@@ -331,6 +364,8 @@ class ReporterAndCliTests(unittest.TestCase):
         self.assertIn("--vulnerability-feed", text)
         self.assertIn("--vulnerability-feed-format trivy", text)
         self.assertIn("--vulnerability-feed-format grype", text)
+        self.assertIn("--vulnerability-feed-format osv", text)
+        self.assertIn("OSV Scanner JSON Mapping", text)
 
 
 if __name__ == "__main__":

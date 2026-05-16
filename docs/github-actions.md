@@ -130,6 +130,20 @@ Use `vulnerability-feed-format: grype` when the file is Grype JSON output.
     upload-sarif: "true"
 ```
 
+Use `vulnerability-feed-format: osv` when the file is OSV Scanner JSON output.
+
+```yaml
+- name: Run Linwarden with OSV Scanner JSON
+  uses: kingkyylian/linwarden@v0.13.0
+  with:
+    root: container-root
+    vulnerability-feed: osv-scanner-report.json
+    vulnerability-feed-format: osv
+    format: sarif
+    fail-on: high
+    upload-sarif: "true"
+```
+
 ## Markdown Job Summary
 
 Use this workflow for operators who want the report directly in the Actions run.

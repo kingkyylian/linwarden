@@ -44,7 +44,7 @@ class ActionMetadataTests(unittest.TestCase):
         self.assertIn("VULNERABILITY_FEED_FORMAT", text)
         self.assertIn("--vulnerability-feed", text)
         self.assertIn("--vulnerability-feed-format", text)
-        self.assertIn("linwarden, trivy, or grype", text)
+        self.assertIn("linwarden, trivy, grype, or osv", text)
 
     def test_github_actions_docs_use_the_composite_action(self) -> None:
         text = DOCS.read_text(encoding="utf-8")
@@ -52,6 +52,7 @@ class ActionMetadataTests(unittest.TestCase):
         self.assertIn("uses: kingkyylian/linwarden@v0.13.0", text)
         self.assertIn("upload-sarif: \"true\"", text)
         self.assertIn("add-summary: \"true\"", text)
+        self.assertIn("vulnerability-feed-format: osv", text)
 
     def test_github_actions_docs_cover_unpacked_container_roots(self) -> None:
         text = DOCS.read_text(encoding="utf-8")

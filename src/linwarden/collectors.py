@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import math
 import platform
 import shlex
 import socket
@@ -547,7 +548,11 @@ def _read_package_vulnerabilities(
         return _read_trivy_vulnerability_feed(feed_path, payload)
     if vulnerability_feed_format == "grype":
         return _read_grype_vulnerability_feed(feed_path, payload)
-    raise ValueError(f"vulnerability feed format must be linwarden, trivy, or grype: {vulnerability_feed_format}")
+    if vulnerability_feed_format == "osv":
+        return _read_osv_vulnerability_feed(feed_path, payload)
+    raise ValueError(
+        f"vulnerability feed format must be linwarden, trivy, grype, or osv: {vulnerability_feed_format}"
+    )
 
 
 def _read_linwarden_vulnerability_feed(feed_path: Path, payload: object) -> tuple[PackageVulnerability, ...]:
@@ -623,6 +628,42 @@ def _read_grype_vulnerability_feed(feed_path: Path, payload: object) -> tuple[Pa
         if not isinstance(match, dict):
             raise ValueError(f"vulnerability feed {feed_path}: grype matches[{index}] must be an object")
         vulnerabilities.append(_package_vulnerability_from_grype_match(feed_path, source, index, match))
+    return tuple(vulnerabilities)
+
+
+def _read_osv_vulnerability_feed(feed_path: Path, payload: object) -> tuple[PackageVulnerability, ...]:
+    if not isinstance(payload, dict):
+        raise ValueError(f"vulnerability feed {feed_path}: osv root must be an object")
+
+    results = payload.get("results")
+    if not isinstance(results, list):
+        raise ValueError(f"vulnerability feed {feed_path}: osv results must be an array")
+
+    vulnerabilities: list[PackageVulnerability] = []
+    for result_index, result in enumerate(results):
+        if not isinstance(result, dict):
+            raise ValueError(f"vulnerability feed {feed_path}: osv results[{result_index}] must be an object")
+        source_path = _osv_source_path(result)
+        packages = result.get("packages")
+        if packages is None:
+            continue
+        if not isinstance(packages, list):
+            raise ValueError(f"vulnerability feed {feed_path}: osv results[{result_index}].packages must be an array")
+        for package_index, package_entry in enumerate(packages):
+            if not isinstance(package_entry, dict):
+                raise ValueError(
+                    f"vulnerability feed {feed_path}: osv results[{result_index}]."
+                    f"packages[{package_index}] must be an object"
+            )
+            vulnerabilities.extend(
+                _package_vulnerabilities_from_osv_package(
+                    feed_path,
+                    source_path,
+                    result_index,
+                    package_index,
+                    package_entry,
+                )
+            )
     return tuple(vulnerabilities)
 
 
@@ -710,6 +751,91 @@ def _package_vulnerability_from_grype_match(
         summary=_optional_grype_string(vulnerability, "description"),
         url=_grype_reference_url(vulnerability),
         source=f"{feed_path}#{source}" if source else str(feed_path),
+    )
+
+
+def _package_vulnerabilities_from_osv_package(
+    feed_path: Path,
+    source_path: str,
+    result_index: int,
+    package_index: int,
+    package_entry: dict[str, object],
+) -> list[PackageVulnerability]:
+    package = _required_osv_package(feed_path, result_index, package_index, package_entry)
+    entries = package_entry.get("vulnerabilities")
+    if entries is None:
+        return []
+    if not isinstance(entries, list):
+        raise ValueError(
+            f"vulnerability feed {feed_path}: osv results[{result_index}].packages[{package_index}]."
+            "vulnerabilities must be an array"
+        )
+
+    vulnerability_by_id: dict[str, dict[str, object]] = {}
+    ordered_vulnerabilities: list[tuple[str, dict[str, object]]] = []
+    for vulnerability_index, entry in enumerate(entries):
+        if not isinstance(entry, dict):
+            raise ValueError(
+                f"vulnerability feed {feed_path}: osv results[{result_index}].packages[{package_index}]."
+                f"vulnerabilities[{vulnerability_index}] must be an object"
+            )
+        vulnerability_id = _required_osv_string(
+            feed_path,
+            result_index,
+            package_index,
+            vulnerability_index,
+            entry,
+            "id",
+        )
+        vulnerability_by_id[vulnerability_id] = entry
+        ordered_vulnerabilities.append((vulnerability_id, entry))
+
+    selected: list[tuple[str, dict[str, object]]] = []
+    handled_ids: set[str] = set()
+    groups = package_entry.get("groups")
+    if isinstance(groups, list):
+        for group in groups:
+            if not isinstance(group, dict):
+                continue
+            ids = group.get("ids")
+            if not isinstance(ids, list):
+                continue
+            group_ids = [vulnerability_id for vulnerability_id in ids if isinstance(vulnerability_id, str)]
+            if not group_ids:
+                continue
+            for vulnerability_id in group_ids:
+                vulnerability = vulnerability_by_id.get(vulnerability_id)
+                if vulnerability is not None:
+                    selected.append((group_ids[0], vulnerability))
+                    handled_ids.update(group_ids)
+                    break
+
+    for vulnerability_id, vulnerability in ordered_vulnerabilities:
+        if vulnerability_id not in handled_ids:
+            selected.append((vulnerability_id, vulnerability))
+
+    return [
+        _package_vulnerability_from_osv_entry(feed_path, source_path, package, vulnerability_id, vulnerability)
+        for vulnerability_id, vulnerability in selected
+    ]
+
+
+def _package_vulnerability_from_osv_entry(
+    feed_path: Path,
+    source_path: str,
+    package: dict[str, str],
+    vulnerability_id: str,
+    vulnerability: dict[str, object],
+) -> PackageVulnerability:
+    return PackageVulnerability(
+        package=package["name"],
+        installed_version=package["version"],
+        fixed_version=_osv_fixed_version(package["name"], vulnerability),
+        vulnerability_id=vulnerability_id,
+        severity=_osv_severity(package["name"], vulnerability),
+        summary=_optional_osv_string(vulnerability, "summary") or _optional_osv_string(vulnerability, "details"),
+        url=_osv_reference_url(vulnerability) or f"https://osv.dev/vulnerability/{vulnerability_id}",
+        source=f"{feed_path}#{source_path}" if source_path else str(feed_path),
     )
 
 
@@ -823,3 +949,214 @@ def _grype_source(payload: dict[str, object]) -> str:
         if user_input:
             return user_input
     return _optional_grype_string(source, "type")
+
+
+def _osv_source_path(result: dict[str, object]) -> str:
+    source = result.get("source")
+    if not isinstance(source, dict):
+        return ""
+    path = source.get("path")
+    return path.strip() if isinstance(path, str) else ""
+
+
+def _required_osv_package(
+    feed_path: Path,
+    result_index: int,
+    package_index: int,
+    package_entry: dict[str, object],
+) -> dict[str, str]:
+    package = package_entry.get("package")
+    if not isinstance(package, dict):
+        raise ValueError(
+            f"vulnerability feed {feed_path}: osv results[{result_index}].packages[{package_index}]."
+            "package must be an object"
+        )
+    name = _required_osv_package_string(feed_path, result_index, package_index, package, "name")
+    version = _required_osv_package_string(feed_path, result_index, package_index, package, "version")
+    return {"name": name, "version": version}
+
+
+def _required_osv_package_string(
+    feed_path: Path,
+    result_index: int,
+    package_index: int,
+    package: dict[object, object],
+    key: str,
+) -> str:
+    value = package.get(key)
+    if not isinstance(value, str) or not value.strip():
+        raise ValueError(
+            f"vulnerability feed {feed_path}: osv results[{result_index}].packages[{package_index}]."
+            f"package.{key} must be a non-empty string"
+        )
+    return value.strip()
+
+
+def _required_osv_string(
+    feed_path: Path,
+    result_index: int,
+    package_index: int,
+    vulnerability_index: int,
+    entry: dict[str, object],
+    key: str,
+) -> str:
+    value = entry.get(key)
+    if not isinstance(value, str) or not value.strip():
+        raise ValueError(
+            f"vulnerability feed {feed_path}: osv results[{result_index}].packages[{package_index}]."
+            f"vulnerabilities[{vulnerability_index}].{key} must be a non-empty string"
+        )
+    return value.strip()
+
+
+def _optional_osv_string(entry: dict[str, object], key: str) -> str:
+    value = entry.get(key, "")
+    return value.strip() if isinstance(value, str) else ""
+
+
+def _osv_fixed_version(package_name: str, vulnerability: dict[str, object]) -> str:
+    affected = vulnerability.get("affected")
+    if not isinstance(affected, list):
+        return ""
+
+    fixed_versions: list[str] = []
+    for affected_entry in affected:
+        if not isinstance(affected_entry, dict):
+            continue
+        affected_package = affected_entry.get("package")
+        if isinstance(affected_package, dict):
+            affected_name = affected_package.get("name")
+            if isinstance(affected_name, str) and affected_name.strip() and affected_name.strip() != package_name:
+                continue
+        ranges = affected_entry.get("ranges")
+        if not isinstance(ranges, list):
+            continue
+        for range_entry in ranges:
+            if not isinstance(range_entry, dict):
+                continue
+            events = range_entry.get("events")
+            if not isinstance(events, list):
+                continue
+            for event in events:
+                if not isinstance(event, dict):
+                    continue
+                fixed = event.get("fixed")
+                if isinstance(fixed, str) and fixed.strip() and fixed.strip() not in fixed_versions:
+                    fixed_versions.append(fixed.strip())
+    return ", ".join(fixed_versions)
+
+
+def _osv_reference_url(vulnerability: dict[str, object]) -> str:
+    references = vulnerability.get("references")
+    if isinstance(references, list):
+        for reference in references:
+            if not isinstance(reference, dict):
+                continue
+            url = reference.get("url")
+            if isinstance(url, str) and url.strip():
+                return url.strip()
+    return ""
+
+
+def _osv_severity(package_name: str, vulnerability: dict[str, object]) -> str:
+    severity = vulnerability.get("severity")
+    if isinstance(severity, list):
+        parsed = _osv_severity_from_list(severity)
+        if parsed:
+            return parsed
+
+    affected = vulnerability.get("affected")
+    if isinstance(affected, list):
+        for affected_entry in affected:
+            if not isinstance(affected_entry, dict):
+                continue
+            affected_package = affected_entry.get("package")
+            if isinstance(affected_package, dict):
+                affected_name = affected_package.get("name")
+                if isinstance(affected_name, str) and affected_name.strip() and affected_name.strip() != package_name:
+                    continue
+            affected_severity = affected_entry.get("severity")
+            if isinstance(affected_severity, list):
+                parsed = _osv_severity_from_list(affected_severity)
+                if parsed:
+                    return parsed
+    return "low"
+
+
+def _osv_severity_from_list(severity: list[object]) -> str:
+    for entry in severity:
+        if not isinstance(entry, dict):
+            continue
+        score = entry.get("score")
+        if not isinstance(score, str) or not score.strip():
+            continue
+        normalized = score.strip().lower()
+        if normalized in _VULNERABILITY_SEVERITIES:
+            return normalized
+        numeric_score = _cvss_base_score(score.strip())
+        if numeric_score is not None:
+            return _cvss_severity(numeric_score)
+    return ""
+
+
+def _cvss_severity(score: float) -> str:
+    if score >= 9.0:
+        return "critical"
+    if score >= 7.0:
+        return "high"
+    if score >= 4.0:
+        return "medium"
+    return "low"
+
+
+def _cvss_base_score(score: str) -> Optional[float]:
+    try:
+        return float(score)
+    except ValueError:
+        pass
+    if score.startswith("CVSS:3."):
+        return _cvss_v3_base_score(score)
+    return None
+
+
+def _cvss_v3_base_score(vector: str) -> Optional[float]:
+    metrics = {}
+    for raw_metric in vector.split("/"):
+        key, separator, value = raw_metric.partition(":")
+        if not separator or not key or not value:
+            continue
+        metrics[key] = value
+
+    scope = metrics.get("S")
+    if scope not in {"U", "C"}:
+        return None
+    try:
+        av = {"N": 0.85, "A": 0.62, "L": 0.55, "P": 0.2}[metrics["AV"]]
+        ac = {"L": 0.77, "H": 0.44}[metrics["AC"]]
+        if scope == "U":
+            pr = {"N": 0.85, "L": 0.62, "H": 0.27}[metrics["PR"]]
+        else:
+            pr = {"N": 0.85, "L": 0.68, "H": 0.5}[metrics["PR"]]
+        ui = {"N": 0.85, "R": 0.62}[metrics["UI"]]
+        confidentiality = {"H": 0.56, "L": 0.22, "N": 0.0}[metrics["C"]]
+        integrity = {"H": 0.56, "L": 0.22, "N": 0.0}[metrics["I"]]
+        availability = {"H": 0.56, "L": 0.22, "N": 0.0}[metrics["A"]]
+    except KeyError:
+        return None
+
+    impact_subscore = 1 - ((1 - confidentiality) * (1 - integrity) * (1 - availability))
+    if scope == "U":
+        impact = 6.42 * impact_subscore
+    else:
+        impact = 7.52 * (impact_subscore - 0.029) - (3.25 * ((impact_subscore - 0.02) ** 15))
+    if impact <= 0:
+        return 0.0
+
+    exploitability = 8.22 * av * ac * pr * ui
+    if scope == "U":
+        return _round_up_1_decimal(min(impact + exploitability, 10))
+    return _round_up_1_decimal(min(1.08 * (impact + exploitability), 10))
+
+
+def _round_up_1_decimal(value: float) -> float:
+    return math.ceil(value * 10) / 10

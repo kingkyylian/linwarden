@@ -25,7 +25,7 @@ inputs:
     description: Optional local package vulnerability feed JSON path.
     default: ""
   vulnerability-feed-format:
-    description: "Local vulnerability feed format: linwarden, trivy, or grype."
+    description: "Local vulnerability feed format: linwarden, trivy, grype, or osv."
     default: "linwarden"
   sshd-mode:
     description: "SSH collection mode: static, effective, or auto."

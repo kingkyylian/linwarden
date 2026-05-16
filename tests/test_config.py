@@ -6,6 +6,7 @@ from linwarden.config import ScanConfig, apply_config, load_config
 from linwarden.rules import evaluate_snapshot
 
 FIXTURE_ROOT = Path(__file__).parent / "fixtures" / "linux-root"
+ARCH_FIXTURE_ROOT = Path(__file__).parent / "fixtures" / "arch-root"
 FIXTURE_CONFIG = Path(__file__).parent / "fixtures" / "linwarden.json"
 CONFIG_FIXTURES = Path(__file__).parent / "fixtures" / "config"
 
@@ -58,6 +59,25 @@ class ConfigTests(unittest.TestCase):
         for rule_id in inherited_rule_ids:
             self.assertEqual(suppressed_by_rule[rule_id].source, "profile")
             self.assertIn("container", suppressed_by_rule[rule_id].reason)
+
+    def test_router_profile_suppresses_fixture_backed_bridge_forwarding(self) -> None:
+        snapshot = collect_host_snapshot(
+            root=ARCH_FIXTURE_ROOT,
+            proc_root=ARCH_FIXTURE_ROOT / "proc",
+            etc_root=ARCH_FIXTURE_ROOT / "etc",
+        )
+
+        server_result = apply_config(evaluate_snapshot(snapshot), ScanConfig(profile="server"))
+        workstation_result = apply_config(evaluate_snapshot(snapshot), ScanConfig(profile="workstation"))
+        router_result = apply_config(evaluate_snapshot(snapshot), ScanConfig(profile="router"))
+        router_suppressed = {finding.rule_id: finding for finding in router_result.suppressed_findings}
+
+        self.assertIn("LNX-NET-007", {finding.rule_id for finding in server_result.active_findings})
+        self.assertIn("LNX-NET-007", {finding.rule_id for finding in workstation_result.active_findings})
+        self.assertNotIn("LNX-NET-007", {finding.rule_id for finding in router_result.active_findings})
+        self.assertEqual(router_suppressed["LNX-NET-007"].source, "profile")
+        self.assertIn("router", router_suppressed["LNX-NET-007"].reason)
+        self.assertIn("bridge", router_suppressed["LNX-NET-007"].reason)
 
     def test_rejects_unknown_profile(self) -> None:
         with self.assertRaisesRegex(ValueError, "unknown profile"):

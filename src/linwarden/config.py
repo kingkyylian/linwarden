@@ -35,6 +35,7 @@ PROFILE_CATALOG = {
         suppressions={
             "LNX-NET-001": "router profile expects IPv4 forwarding",
             "LNX-NET-003": "router profile expects IPv6 forwarding",
+            "LNX-NET-007": "router profile may intentionally forward traffic across bridge interfaces",
         },
     ),
     "container": ProfileDefinition(

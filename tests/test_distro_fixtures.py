@@ -41,7 +41,7 @@ class DistroFixtureTests(unittest.TestCase):
                 "firewall": ("nftables", True),
                 "systemd_marker": "etc/systemd/system/multi-user.target.wants/nftables.service",
                 "service_exposures": 0,
-                "rules": {"LNX-SSH-005", "LNX-NET-002"},
+                "rules": {"LNX-SSH-005", "LNX-NET-002", "LNX-NET-007"},
             },
             "alpine-root": {
                 "distro_id": "alpine",

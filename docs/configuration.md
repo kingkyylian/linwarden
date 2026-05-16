@@ -44,7 +44,7 @@ linwarden profiles --format json
 | --- | --- | --- |
 | `server` | General Linux servers. | None. |
 | `workstation` | Interactive desktops and laptops. SSH, firewall, package, and kernel findings remain visible. | None. |
-| `router` | Hosts that intentionally route traffic between interfaces. | `LNX-NET-001`, `LNX-NET-003`. |
+| `router` | Hosts that intentionally route traffic between interfaces, including bridged LAN or workload networks. | `LNX-NET-001`, `LNX-NET-003`, `LNX-NET-007`. |
 | `container` | Container or image-root scans where kernel and filesystem sysctl values may be inherited from the host. | `LNX-KRN-001`, `LNX-KRN-002`, `LNX-KRN-003`, `LNX-FS-001`, `LNX-FS-002`. |
 
 Profile suppressions are still emitted as suppressed findings in JSON and Markdown reports. Use `disabled_rules` or `suppressions` only for local exceptions that are not part of the selected host role.

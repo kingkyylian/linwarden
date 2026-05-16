@@ -120,6 +120,10 @@ class ReporterAndCliTests(unittest.TestCase):
         self.assertIn("container", profiles)
         self.assertEqual(profiles["server"]["suppressed_rules"], [])
         self.assertIn(
+            "LNX-NET-007",
+            {rule["rule_id"] for rule in profiles["router"]["suppressed_rules"]},
+        )
+        self.assertIn(
             "LNX-KRN-002",
             {rule["rule_id"] for rule in profiles["container"]["suppressed_rules"]},
         )

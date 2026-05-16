@@ -18,7 +18,7 @@ Each fixture keeps only small text markers that exercise Linwarden's rootless co
 | --- | --- | --- | --- |
 | `tests/fixtures/debian-root` | Synthetic Debian 12-style server root. | Hostname, update counts, procfs values, and package metadata are fabricated. | APT metadata, update-notifier counts, disabled UFW, SSH password auth, procfs sysctls. |
 | `tests/fixtures/fedora-root` | Synthetic Fedora-style server root. | Firewalld and systemd markers are small hand-written files, not copied unit databases. | DNF metadata, enabled firewalld, enabled wildcard-bound service, SSH MaxAuthTries finding. |
-| `tests/fixtures/arch-root` | Synthetic Arch-style rolling root. | Pacman sync database files are marker files without package data. | Pacman metadata, enabled nftables marker, SSH TCP forwarding, IPv4 redirect sysctl. |
+| `tests/fixtures/arch-root` | Synthetic Arch-style rolling root. | Pacman sync database files are marker files without package data. | Pacman metadata, enabled nftables marker, SSH TCP forwarding, IPv4 redirect sysctl, bridge forwarding. |
 | `tests/fixtures/alpine-root` | Synthetic Alpine-style minimal root. | APK index is a marker file and procfs values are fabricated. | APK metadata, nftables config-only detection, low `vm.mmap_min_addr`, IPv6 redirect sysctl. |
 
 ## Rules

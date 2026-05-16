@@ -128,7 +128,7 @@ Profiles:
 | --- | --- |
 | `server` | Default for general Linux servers. No profile suppressions. |
 | `workstation` | Interactive desktop or laptop posture. No profile suppressions; SSH, firewall, package, and kernel findings stay visible. |
-| `router` | For hosts that intentionally route traffic. Suppresses IPv4 and IPv6 forwarding findings. |
+| `router` | For hosts that intentionally route traffic. Suppresses IPv4, IPv6, and bridge forwarding findings. |
 | `container` | For container or image-root scans where host-kernel sysctl values may be inherited. Suppresses kernel and filesystem sysctl findings. |
 
 Suppressed findings remain visible in JSON and Markdown reports. SARIF output includes active findings only.

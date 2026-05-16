@@ -168,6 +168,7 @@ class ActionMetadataTests(unittest.TestCase):
         self.assertIn("Release Version Guard", docs)
         self.assertIn("scripts/verify_release_version.py", docs)
         self.assertIn("tag name matches `pyproject.toml`", docs)
+        self.assertIn("runtime `__version__` matches `pyproject.toml`", docs)
         self.assertIn("distribution filenames match that version", docs)
 
 

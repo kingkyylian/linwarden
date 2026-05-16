@@ -33,7 +33,7 @@ The dry run uploads `release-dry-run-artifacts` for inspection. It does not crea
 
 ## Release Version Guard
 
-The tag release workflow runs `scripts/verify_release_version.py` before signing, attestations, GitHub release creation, or PyPI publishing. The guard checks that the tag name matches `pyproject.toml` and that distribution filenames match that version.
+The tag release workflow runs `scripts/verify_release_version.py` before signing, attestations, GitHub release creation, or PyPI publishing. The guard checks that the tag name matches `pyproject.toml`, runtime `__version__` matches `pyproject.toml`, and distribution filenames match that version.
 
 ## Optional GPG Signing
 

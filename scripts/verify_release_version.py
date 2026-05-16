@@ -6,14 +6,19 @@ from pathlib import Path
 from typing import Optional, Sequence
 
 PROJECT_VERSION_RE = re.compile(r'^version\s*=\s*"([^"]+)"\s*(?:#.*)?$')
+RUNTIME_VERSION_RE = re.compile(r'^__version__\s*=\s*"([^"]+)"\s*(?:#.*)?$')
 
 
 def verify_release_version(
     pyproject: Path,
+    package_init: Path,
     ref_name: str,
     dist_dir: Optional[Path] = None,
 ) -> None:
     version = read_project_version(pyproject)
+    runtime_version = read_runtime_version(package_init)
+    if runtime_version != version:
+        raise ValueError(f"runtime version {runtime_version} does not match pyproject version {version}")
     tag_version = version_from_ref(ref_name)
     if tag_version != version:
         raise ValueError(f"tag {ref_name} does not match pyproject version {version}")
@@ -41,6 +46,19 @@ def read_project_version(pyproject: Path) -> str:
         if match is not None:
             return match.group(1)
     raise ValueError(f"pyproject version not found in {pyproject}")
+
+
+def read_runtime_version(package_init: Path) -> str:
+    try:
+        lines = package_init.read_text(encoding="utf-8").splitlines()
+    except OSError as exc:
+        raise ValueError(f"failed to read {package_init}: {exc}") from exc
+
+    for raw_line in lines:
+        match = RUNTIME_VERSION_RE.match(raw_line.strip())
+        if match is not None:
+            return match.group(1)
+    raise ValueError(f"runtime version not found in {package_init}")
 
 
 def version_from_ref(ref_name: str) -> str:
@@ -75,11 +93,12 @@ def verify_dist_files(dist_dir: Path, version: str) -> None:
 def main(argv: Optional[Sequence[str]] = None) -> int:
     parser = argparse.ArgumentParser(description="Verify Linwarden release tag, version, and distribution files.")
     parser.add_argument("--pyproject", type=Path, default=Path("pyproject.toml"))
+    parser.add_argument("--package-init", type=Path, default=Path("src/linwarden/__init__.py"))
     parser.add_argument("--ref-name", required=True)
     parser.add_argument("--dist-dir", type=Path)
     args = parser.parse_args(argv)
     try:
-        verify_release_version(args.pyproject, args.ref_name, args.dist_dir)
+        verify_release_version(args.pyproject, args.package_init, args.ref_name, args.dist_dir)
     except ValueError as exc:
         parser.error(str(exc))
     return 0

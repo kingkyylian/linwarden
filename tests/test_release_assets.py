@@ -41,16 +41,20 @@ class ReleaseAssetTests(unittest.TestCase):
         with TemporaryDirectory() as temp_dir:
             root = Path(temp_dir)
             dist = root / "dist"
+            package_init = root / "src" / "linwarden" / "__init__.py"
             dist.mkdir()
+            package_init.parent.mkdir(parents=True)
             (root / "pyproject.toml").write_text(
                 '[project]\nname = "linwarden"\nversion = "1.2.3"\n',
                 encoding="utf-8",
             )
+            package_init.write_text('__version__ = "1.2.3"\n', encoding="utf-8")
             (dist / "linwarden-1.2.3.tar.gz").write_bytes(b"sdist")
             (dist / "linwarden-1.2.3-py3-none-any.whl").write_bytes(b"wheel")
 
             verify_release_version(
                 pyproject=root / "pyproject.toml",
+                package_init=package_init,
                 ref_name="v1.2.3",
                 dist_dir=dist,
             )
@@ -58,31 +62,57 @@ class ReleaseAssetTests(unittest.TestCase):
     def test_verify_release_version_rejects_mismatched_tag(self) -> None:
         with TemporaryDirectory() as temp_dir:
             root = Path(temp_dir)
+            package_init = root / "src" / "linwarden" / "__init__.py"
+            package_init.parent.mkdir(parents=True)
             (root / "pyproject.toml").write_text(
                 '[project]\nname = "linwarden"\nversion = "1.2.3"\n',
                 encoding="utf-8",
             )
+            package_init.write_text('__version__ = "1.2.3"\n', encoding="utf-8")
 
             with self.assertRaisesRegex(ValueError, "tag v1.2.4 does not match pyproject version 1.2.3"):
                 verify_release_version(
                     pyproject=root / "pyproject.toml",
+                    package_init=package_init,
                     ref_name="v1.2.4",
+                )
+
+    def test_verify_release_version_rejects_mismatched_runtime_version(self) -> None:
+        with TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            package_init = root / "src" / "linwarden" / "__init__.py"
+            package_init.parent.mkdir(parents=True)
+            (root / "pyproject.toml").write_text(
+                '[project]\nname = "linwarden"\nversion = "1.2.3"\n',
+                encoding="utf-8",
+            )
+            package_init.write_text('__version__ = "1.2.4"\n', encoding="utf-8")
+
+            with self.assertRaisesRegex(ValueError, "runtime version 1.2.4 does not match pyproject version 1.2.3"):
+                verify_release_version(
+                    pyproject=root / "pyproject.toml",
+                    package_init=package_init,
+                    ref_name="v1.2.3",
                 )
 
     def test_verify_release_version_rejects_mismatched_dist_files(self) -> None:
         with TemporaryDirectory() as temp_dir:
             root = Path(temp_dir)
             dist = root / "dist"
+            package_init = root / "src" / "linwarden" / "__init__.py"
             dist.mkdir()
+            package_init.parent.mkdir(parents=True)
             (root / "pyproject.toml").write_text(
                 '[project]\nname = "linwarden"\nversion = "1.2.3"\n',
                 encoding="utf-8",
             )
+            package_init.write_text('__version__ = "1.2.3"\n', encoding="utf-8")
             (dist / "linwarden-1.2.4.tar.gz").write_bytes(b"sdist")
 
             with self.assertRaisesRegex(ValueError, "dist file linwarden-1.2.4.tar.gz does not match version 1.2.3"):
                 verify_release_version(
                     pyproject=root / "pyproject.toml",
+                    package_init=package_init,
                     ref_name="v1.2.3",
                     dist_dir=dist,
                 )

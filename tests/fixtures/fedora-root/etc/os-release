@@ -1,2 +1,8 @@
 PRETTY_NAME="Fedora Linux 41"
+PRETTY_NAME="Fedora Linux 40 (Fixture)"
+NAME="Fedora Linux"
+VERSION_ID="40"
+VERSION="40 (Fixture)"
 ID=fedora
+ID_LIKE="rhel fedora"
+HOME_URL="https://fedoraproject.org/"

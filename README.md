@@ -247,7 +247,7 @@ Please report vulnerabilities using [SECURITY.md](SECURITY.md).
 ## Roadmap
 
 - Container runtime posture checks.
-- Additional package vulnerability feed formats.
+- Profile suppression refinement from distro fixture feedback.
 
 Contributor-ready ideas live in [docs/contributor-ideas.md](docs/contributor-ideas.md).
 

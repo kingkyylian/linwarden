@@ -37,6 +37,8 @@ make check PYTHON=.venv/bin/python
 
 The test suite does not inspect the developer machine. It uses `tests/fixtures/linux-root` as a deterministic Linux root and passes that root into the collector.
 
+Additional distro fixture roots live under `tests/fixtures/*-root`; their origin and sanitization notes are documented in [fixture-roots.md](fixture-roots.md).
+
 This keeps tests stable on macOS, Linux, and CI.
 
 ## Release Checklist

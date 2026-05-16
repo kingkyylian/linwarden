@@ -1,0 +1,6 @@
+Port 22
+PermitRootLogin no
+PasswordAuthentication no
+PermitEmptyPasswords no
+MaxAuthTries 3
+AllowTcpForwarding yes

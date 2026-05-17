@@ -2,6 +2,8 @@
 
 Linwarden JSON reports are intended for CI and fleet ingestion. The current schema version is `1.7`.
 
+The machine-readable JSON Schema artifact lives at [`schemas/report.schema.json`](../schemas/report.schema.json).
+
 ## Top-Level Shape
 
 ```json

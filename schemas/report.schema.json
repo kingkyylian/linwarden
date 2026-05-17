@@ -1,0 +1,541 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/kingkyylian/linwarden/main/schemas/report.schema.json",
+  "title": "Linwarden JSON report",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "host",
+    "summary",
+    "findings",
+    "suppressed_findings"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "1.7"
+    },
+    "host": {
+      "$ref": "#/$defs/host"
+    },
+    "summary": {
+      "$ref": "#/$defs/summary"
+    },
+    "findings": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/finding"
+      }
+    },
+    "suppressed_findings": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/suppressed_finding"
+      }
+    }
+  },
+  "$defs": {
+    "string_map": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "string"
+      }
+    },
+    "severity": {
+      "type": "string",
+      "enum": [
+        "critical",
+        "high",
+        "medium",
+        "low"
+      ]
+    },
+    "host": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "hostname",
+        "os",
+        "kernel_release",
+        "uptime_seconds",
+        "load_average",
+        "memory",
+        "mounts",
+        "sysctls",
+        "sshd_source",
+        "sshd_match_context",
+        "package_status",
+        "firewall_status",
+        "bridge_interfaces",
+        "systemd_service_exposures",
+        "package_vulnerabilities",
+        "container_runtime_signals"
+      ],
+      "properties": {
+        "hostname": {
+          "type": "string"
+        },
+        "os": {
+          "$ref": "#/$defs/string_map"
+        },
+        "kernel_release": {
+          "type": "string"
+        },
+        "uptime_seconds": {
+          "type": "number"
+        },
+        "load_average": {
+          "$ref": "#/$defs/load_average"
+        },
+        "memory": {
+          "$ref": "#/$defs/memory"
+        },
+        "mounts": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/mount"
+          }
+        },
+        "sysctls": {
+          "$ref": "#/$defs/string_map"
+        },
+        "sshd_source": {
+          "type": "string",
+          "enum": [
+            "static",
+            "effective"
+          ]
+        },
+        "sshd_match_context": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "package_status": {
+          "$ref": "#/$defs/package_status"
+        },
+        "firewall_status": {
+          "$ref": "#/$defs/firewall_status"
+        },
+        "bridge_interfaces": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/bridge_interface"
+          }
+        },
+        "systemd_service_exposures": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/systemd_service_exposure"
+          }
+        },
+        "package_vulnerabilities": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/package_vulnerability"
+          }
+        },
+        "container_runtime_signals": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/container_runtime_signal"
+          }
+        }
+      }
+    },
+    "load_average": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "one_minute",
+        "five_minutes",
+        "fifteen_minutes"
+      ],
+      "properties": {
+        "one_minute": {
+          "type": "number"
+        },
+        "five_minutes": {
+          "type": "number"
+        },
+        "fifteen_minutes": {
+          "type": "number"
+        }
+      }
+    },
+    "memory": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "total_mib",
+        "available_mib",
+        "swap_total_mib",
+        "swap_free_mib"
+      ],
+      "properties": {
+        "total_mib": {
+          "type": "integer"
+        },
+        "available_mib": {
+          "type": "integer"
+        },
+        "swap_total_mib": {
+          "type": "integer"
+        },
+        "swap_free_mib": {
+          "type": "integer"
+        }
+      }
+    },
+    "mount": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "source",
+        "mount_point",
+        "filesystem",
+        "options"
+      ],
+      "properties": {
+        "source": {
+          "type": "string"
+        },
+        "mount_point": {
+          "type": "string"
+        },
+        "filesystem": {
+          "type": "string"
+        },
+        "options": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "package_status": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "manager",
+        "updates_available",
+        "security_updates",
+        "source",
+        "metadata_age_days",
+        "metadata_source"
+      ],
+      "properties": {
+        "manager": {
+          "type": "string"
+        },
+        "updates_available": {
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "security_updates": {
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "source": {
+          "type": "string"
+        },
+        "metadata_age_days": {
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "metadata_source": {
+          "type": "string"
+        }
+      }
+    },
+    "firewall_status": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "provider",
+        "enabled",
+        "source"
+      ],
+      "properties": {
+        "provider": {
+          "type": "string"
+        },
+        "enabled": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "source": {
+          "type": "string"
+        }
+      }
+    },
+    "bridge_interface": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "name",
+        "members",
+        "ipv4_forwarding",
+        "ipv6_forwarding",
+        "source"
+      ],
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "members": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "ipv4_forwarding": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "ipv6_forwarding": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "source": {
+          "type": "string"
+        }
+      }
+    },
+    "systemd_service_exposure": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "name",
+        "bind",
+        "source",
+        "enabled_source",
+        "exec_start"
+      ],
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "bind": {
+          "type": "string"
+        },
+        "source": {
+          "type": "string"
+        },
+        "enabled_source": {
+          "type": "string"
+        },
+        "exec_start": {
+          "type": "string"
+        }
+      }
+    },
+    "package_vulnerability": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "package",
+        "installed_version",
+        "fixed_version",
+        "vulnerability_id",
+        "severity",
+        "summary",
+        "url",
+        "source"
+      ],
+      "properties": {
+        "package": {
+          "type": "string"
+        },
+        "installed_version": {
+          "type": "string"
+        },
+        "fixed_version": {
+          "type": "string"
+        },
+        "vulnerability_id": {
+          "type": "string"
+        },
+        "severity": {
+          "$ref": "#/$defs/severity"
+        },
+        "summary": {
+          "type": "string"
+        },
+        "url": {
+          "type": "string"
+        },
+        "source": {
+          "type": "string"
+        }
+      }
+    },
+    "container_runtime_signal": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "runtime",
+        "signal",
+        "evidence",
+        "source"
+      ],
+      "properties": {
+        "runtime": {
+          "type": "string"
+        },
+        "signal": {
+          "type": "string"
+        },
+        "evidence": {
+          "type": "string"
+        },
+        "source": {
+          "type": "string"
+        }
+      }
+    },
+    "summary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "total",
+        "by_severity",
+        "score"
+      ],
+      "properties": {
+        "total": {
+          "type": "integer"
+        },
+        "by_severity": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "integer"
+          },
+          "required": [
+            "critical",
+            "high",
+            "medium",
+            "low"
+          ],
+          "properties": {
+            "critical": {
+              "type": "integer"
+            },
+            "high": {
+              "type": "integer"
+            },
+            "medium": {
+              "type": "integer"
+            },
+            "low": {
+              "type": "integer"
+            }
+          }
+        },
+        "score": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 100
+        }
+      }
+    },
+    "finding": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "rule_id",
+        "severity",
+        "title",
+        "category",
+        "evidence",
+        "impact",
+        "remediation",
+        "references"
+      ],
+      "properties": {
+        "rule_id": {
+          "type": "string"
+        },
+        "severity": {
+          "$ref": "#/$defs/severity"
+        },
+        "title": {
+          "type": "string"
+        },
+        "category": {
+          "type": "string"
+        },
+        "evidence": {
+          "type": "string"
+        },
+        "impact": {
+          "type": "string"
+        },
+        "remediation": {
+          "type": "string"
+        },
+        "references": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "suppressed_finding": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "rule_id",
+        "severity",
+        "title",
+        "category",
+        "evidence",
+        "reason",
+        "source"
+      ],
+      "properties": {
+        "rule_id": {
+          "type": "string"
+        },
+        "severity": {
+          "$ref": "#/$defs/severity"
+        },
+        "title": {
+          "type": "string"
+        },
+        "category": {
+          "type": "string"
+        },
+        "evidence": {
+          "type": "string"
+        },
+        "reason": {
+          "type": "string"
+        },
+        "source": {
+          "type": "string",
+          "enum": [
+            "profile",
+            "disabled_rule",
+            "suppression"
+          ]
+        }
+      }
+    }
+  }
+}

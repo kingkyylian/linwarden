@@ -12,6 +12,7 @@ from linwarden.rules import evaluate_snapshot
 
 FIXTURE_ROOT = Path(__file__).parent / "fixtures" / "linux-root"
 FIXTURE_CONFIG = Path(__file__).parent / "fixtures" / "linwarden.json"
+REPORT_SCHEMA = Path(__file__).resolve().parents[1] / "schemas" / "report.schema.json"
 
 
 class ReporterAndCliTests(unittest.TestCase):
@@ -34,6 +35,30 @@ class ReporterAndCliTests(unittest.TestCase):
         self.assertEqual(payload["summary"]["score"], 0)
         self.assertEqual(payload["findings"][0]["rule_id"], "LNX-SSH-001")
         self.assertEqual(payload["suppressed_findings"], [])
+
+    def test_json_report_schema_artifact_matches_renderer_contract(self) -> None:
+        snapshot = collect_host_snapshot(
+            root=FIXTURE_ROOT,
+            proc_root=FIXTURE_ROOT / "proc",
+            etc_root=FIXTURE_ROOT / "etc",
+        )
+        payload = json.loads(render_json(snapshot, evaluate_snapshot(snapshot)))
+        schema = json.loads(REPORT_SCHEMA.read_text(encoding="utf-8"))
+
+        self.assertEqual(
+            schema["$id"],
+            "https://raw.githubusercontent.com/kingkyylian/linwarden/main/schemas/report.schema.json",
+        )
+        self.assertEqual(schema["properties"]["schema_version"]["const"], payload["schema_version"])
+        self.assertEqual(
+            set(schema["required"]),
+            {"schema_version", "host", "summary", "findings", "suppressed_findings"},
+        )
+        self.assertEqual(
+            set(schema["$defs"]["host"]["required"]),
+            set(payload["host"]),
+        )
+        self.assertEqual(schema["$defs"]["summary"]["required"], ["total", "by_severity", "score"])
 
     def test_renders_markdown_report_for_github_artifacts(self) -> None:
         snapshot = collect_host_snapshot(

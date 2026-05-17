@@ -211,6 +211,8 @@ docs/
   release.md      release artifact and publishing workflow
   rules.md        rule catalog
   report-schema.md JSON report contract
+schemas/
+  report.schema.json machine-readable JSON report schema
 ```
 
 ## Development

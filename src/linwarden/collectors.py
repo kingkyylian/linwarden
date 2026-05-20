@@ -265,9 +265,11 @@ def _read_package_metadata_age(root: Path, manager: str) -> tuple[Optional[int],
 
 def _package_metadata_candidates(root: Path, manager: str) -> tuple[Path, ...]:
     if manager == "apt":
+        apt_lists = root / "var" / "lib" / "apt" / "lists"
         return (
             root / "var" / "lib" / "apt" / "periodic" / "update-success-stamp",
             root / "var" / "cache" / "apt" / "pkgcache.bin",
+            *tuple(sorted(apt_lists.glob("*Release"))),
         )
     if manager == "dnf":
         return (

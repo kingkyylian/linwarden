@@ -123,6 +123,25 @@ class DistroFixtureTests(unittest.TestCase):
         self.assertEqual(snapshot.package_status.metadata_source, str(stamp))
         self.assertEqual(findings["LNX-PKG-003"].severity, "medium")
 
+    def test_apt_metadata_uses_lists_when_update_stamp_is_absent(self) -> None:
+        with TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            etc = root / "etc"
+            in_release = root / "var" / "lib" / "apt" / "lists" / "deb.debian.org_debian_dists_bookworm_InRelease"
+            etc.mkdir()
+            in_release.parent.mkdir(parents=True)
+            (etc / "os-release").write_text('ID="debian"\n', encoding="utf-8")
+            in_release.write_text("fixture apt metadata marker\n", encoding="utf-8")
+            old_timestamp = time.time() - (21 * 86400)
+            os.utime(in_release, (old_timestamp, old_timestamp))
+
+            snapshot = collect_host_snapshot(root=root, proc_root=root / "proc", etc_root=etc)
+            findings = {finding.rule_id: finding for finding in evaluate_snapshot(snapshot)}
+
+        self.assertGreaterEqual(snapshot.package_status.metadata_age_days or 0, 20)
+        self.assertEqual(snapshot.package_status.metadata_source, str(in_release))
+        self.assertEqual(findings["LNX-PKG-003"].severity, "medium")
+
     def test_fedora_fixture_covers_firewalld_and_dnf_metadata(self) -> None:
         root = FIXTURE_DIR / "fedora-root"
         snapshot = collect_host_snapshot(root=root, proc_root=root / "proc", etc_root=root / "etc")

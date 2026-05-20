@@ -16,7 +16,7 @@ The release workflow validates the project, builds source and wheel artifacts, w
 3. Run `make package PYTHON=.venv/bin/python`.
 4. Run `python scripts/release_assets.py dist`.
 5. Confirm `dist/SHA256SUMS` contains only the intended release files.
-6. Run `python scripts/verify_release_version.py --ref-name v0.13.1 --dist-dir dist`.
+6. Run `python scripts/verify_release_version.py --ref-name v0.13.1 --dist-dir dist --changelog CHANGELOG.md`.
 7. Push the version tag.
 8. Verify each published artifact attestation with `gh attestation verify`.
 9. If PyPI publishing is enabled, run `python scripts/smoke_pypi_release.py v0.13.1`; it installs the released version from PyPI in a fresh environment, runs `linwarden --version`, runs `linwarden --help`, and runs a fixture scan.
@@ -44,7 +44,7 @@ The workflow run verifies that the requested version installs from PyPI, reports
 
 ## Release Version Guard
 
-The tag release workflow runs `scripts/verify_release_version.py` before signing, attestations, GitHub release creation, or PyPI publishing. The guard checks that the tag name matches `pyproject.toml`, runtime `__version__` matches `pyproject.toml`, and distribution filenames match that version.
+The tag release workflow runs `scripts/verify_release_version.py` before signing, attestations, GitHub release creation, or PyPI publishing. The guard checks that the tag name matches `pyproject.toml`, runtime `__version__` matches `pyproject.toml`, distribution filenames match that version, and `CHANGELOG.md` has a dated section for the release version with at least one entry.
 
 ## Optional GPG Signing
 

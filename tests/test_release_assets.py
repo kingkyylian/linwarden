@@ -44,6 +44,7 @@ class ReleaseAssetTests(unittest.TestCase):
             root = Path(temp_dir)
             dist = root / "dist"
             package_init = root / "src" / "linwarden" / "__init__.py"
+            changelog = root / "CHANGELOG.md"
             dist.mkdir()
             package_init.parent.mkdir(parents=True)
             (root / "pyproject.toml").write_text(
@@ -51,6 +52,7 @@ class ReleaseAssetTests(unittest.TestCase):
                 encoding="utf-8",
             )
             package_init.write_text('__version__ = "1.2.3"\n', encoding="utf-8")
+            changelog.write_text("# Changelog\n\n## 1.2.3 - 2026-05-20\n\n- Added release notes.\n", encoding="utf-8")
             (dist / "linwarden-1.2.3.tar.gz").write_bytes(b"sdist")
             (dist / "linwarden-1.2.3-py3-none-any.whl").write_bytes(b"wheel")
 
@@ -59,6 +61,7 @@ class ReleaseAssetTests(unittest.TestCase):
                 package_init=package_init,
                 ref_name="v1.2.3",
                 dist_dir=dist,
+                changelog=changelog,
             )
 
     def test_verify_release_version_rejects_mismatched_tag(self) -> None:
@@ -117,6 +120,48 @@ class ReleaseAssetTests(unittest.TestCase):
                     package_init=package_init,
                     ref_name="v1.2.3",
                     dist_dir=dist,
+                )
+
+    def test_verify_release_version_rejects_missing_changelog_section(self) -> None:
+        with TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            package_init = root / "src" / "linwarden" / "__init__.py"
+            changelog = root / "CHANGELOG.md"
+            package_init.parent.mkdir(parents=True)
+            (root / "pyproject.toml").write_text(
+                '[project]\nname = "linwarden"\nversion = "1.2.3"\n',
+                encoding="utf-8",
+            )
+            package_init.write_text('__version__ = "1.2.3"\n', encoding="utf-8")
+            changelog.write_text("# Changelog\n\n## 1.2.2 - 2026-05-19\n\n- Previous notes.\n", encoding="utf-8")
+
+            with self.assertRaisesRegex(ValueError, "changelog section for version 1.2.3 not found"):
+                verify_release_version(
+                    pyproject=root / "pyproject.toml",
+                    package_init=package_init,
+                    ref_name="v1.2.3",
+                    changelog=changelog,
+                )
+
+    def test_verify_release_version_rejects_empty_changelog_section(self) -> None:
+        with TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            package_init = root / "src" / "linwarden" / "__init__.py"
+            changelog = root / "CHANGELOG.md"
+            package_init.parent.mkdir(parents=True)
+            (root / "pyproject.toml").write_text(
+                '[project]\nname = "linwarden"\nversion = "1.2.3"\n',
+                encoding="utf-8",
+            )
+            package_init.write_text('__version__ = "1.2.3"\n', encoding="utf-8")
+            changelog.write_text("# Changelog\n\n## 1.2.3 - 2026-05-20\n\n## 1.2.2 - 2026-05-19\n", encoding="utf-8")
+
+            with self.assertRaisesRegex(ValueError, "changelog section for version 1.2.3 has no entries"):
+                verify_release_version(
+                    pyproject=root / "pyproject.toml",
+                    package_init=package_init,
+                    ref_name="v1.2.3",
+                    changelog=changelog,
                 )
 
     def test_smoke_pypi_release_runs_install_and_cli_checks(self) -> None:

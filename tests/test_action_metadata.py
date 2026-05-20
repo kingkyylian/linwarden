@@ -137,7 +137,11 @@ class ActionMetadataTests(unittest.TestCase):
         text = RELEASE_WORKFLOW.read_text(encoding="utf-8")
 
         self.assertIn("Verify release version", text)
-        self.assertIn("python scripts/verify_release_version.py --ref-name \"$GITHUB_REF_NAME\" --dist-dir dist", text)
+        self.assertIn(
+            "python scripts/verify_release_version.py --ref-name \"$GITHUB_REF_NAME\" "
+            "--dist-dir dist --changelog CHANGELOG.md",
+            text,
+        )
         self.assertLess(text.index("Verify release version"), text.index("Upload release dry-run artifacts"))
         self.assertLess(text.index("Verify release version"), text.index("Generate artifact attestations"))
         self.assertLess(text.index("Verify release version"), text.index("Create GitHub release"))
@@ -171,6 +175,7 @@ class ActionMetadataTests(unittest.TestCase):
         self.assertIn("tag name matches `pyproject.toml`", docs)
         self.assertIn("runtime `__version__` matches `pyproject.toml`", docs)
         self.assertIn("distribution filenames match that version", docs)
+        self.assertIn("`CHANGELOG.md` has a dated section for the release version", docs)
 
     def test_release_docs_cover_pypi_smoke_script(self) -> None:
         docs = RELEASE_DOCS.read_text(encoding="utf-8")

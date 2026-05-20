@@ -294,16 +294,16 @@ def _read_firewall_status(etc_root: Path) -> FirewallStatus:
                 enabled = line.split("=", 1)[1].strip().lower() == "yes"
         return FirewallStatus(provider="ufw", enabled=enabled, source=str(ufw_config))
 
-    firewalld_marker = _systemd_wants_marker(etc_root, "firewalld.service")
+    firewalld_marker = _enabled_systemd_unit_marker(etc_root, "firewalld.service")
     firewalld_config = etc_root / "firewalld" / "firewalld.conf"
-    if _path_exists_or_symlink(firewalld_marker):
+    if firewalld_marker is not None:
         return FirewallStatus(provider="firewalld", enabled=True, source=str(firewalld_marker))
     if firewalld_config.exists():
         return FirewallStatus(provider="firewalld", enabled=None, source=str(firewalld_config))
 
-    nftables_marker = _systemd_wants_marker(etc_root, "nftables.service")
+    nftables_marker = _enabled_systemd_unit_marker(etc_root, "nftables.service")
     nftables_config = etc_root / "nftables.conf"
-    if _path_exists_or_symlink(nftables_marker):
+    if nftables_marker is not None:
         return FirewallStatus(provider="nftables", enabled=True, source=str(nftables_marker))
     if nftables_config.exists():
         return FirewallStatus(provider="nftables", enabled=None, source=str(nftables_config))
@@ -358,6 +358,13 @@ def _read_sysctl_bool(path: Path) -> Optional[bool]:
 
 def _systemd_wants_marker(etc_root: Path, service_name: str) -> Path:
     return etc_root / "systemd" / "system" / "multi-user.target.wants" / service_name
+
+
+def _enabled_systemd_unit_marker(etc_root: Path, unit_name: str) -> Optional[Path]:
+    for marker in _enabled_systemd_unit_markers(etc_root):
+        if marker.name == unit_name:
+            return marker
+    return None
 
 
 def _path_exists_or_symlink(path: Path) -> bool:

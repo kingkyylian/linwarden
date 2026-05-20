@@ -171,6 +171,13 @@ class ActionMetadataTests(unittest.TestCase):
         self.assertIn("runtime `__version__` matches `pyproject.toml`", docs)
         self.assertIn("distribution filenames match that version", docs)
 
+    def test_release_docs_cover_pypi_smoke_script(self) -> None:
+        docs = RELEASE_DOCS.read_text(encoding="utf-8")
+
+        self.assertIn("scripts/smoke_pypi_release.py", docs)
+        self.assertIn("linwarden --version", docs)
+        self.assertIn("fixture scan", docs)
+
 
 if __name__ == "__main__":
     unittest.main()

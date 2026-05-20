@@ -2,8 +2,10 @@ import hashlib
 import unittest
 from pathlib import Path
 from tempfile import TemporaryDirectory
+from types import SimpleNamespace
 
 from scripts.release_assets import write_sha256sums
+from scripts.smoke_pypi_release import smoke_pypi_release
 from scripts.verify_release_version import verify_release_version
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -115,6 +117,66 @@ class ReleaseAssetTests(unittest.TestCase):
                     package_init=package_init,
                     ref_name="v1.2.3",
                     dist_dir=dist,
+                )
+
+    def test_smoke_pypi_release_runs_install_and_cli_checks(self) -> None:
+        with TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            fixture_root = root / "tests" / "fixtures" / "linux-root"
+            venv = root / "venv"
+            fixture_root.mkdir(parents=True)
+            commands: list[list[str]] = []
+
+            def fake_run(command: list[str], **kwargs: object) -> SimpleNamespace:
+                commands.append(command)
+                if command[-1] == "--version":
+                    return SimpleNamespace(stdout="linwarden 1.2.3\n")
+                return SimpleNamespace(stdout="")
+
+            smoke_pypi_release(
+                "v1.2.3",
+                fixture_root=fixture_root,
+                venv_path=venv,
+                python="python3",
+                runner=fake_run,
+            )
+
+        self.assertEqual(commands[0], ["python3", "-m", "venv", str(venv)])
+        self.assertEqual(commands[1][-4:], ["install", "--no-cache-dir", "--upgrade", "linwarden==1.2.3"])
+        self.assertEqual(commands[2], [str(venv / "bin" / "linwarden"), "--version"])
+        self.assertEqual(commands[3], [str(venv / "bin" / "linwarden"), "--help"])
+        self.assertEqual(
+            commands[4],
+            [
+                str(venv / "bin" / "linwarden"),
+                "scan",
+                "--root",
+                str(fixture_root),
+                "--format",
+                "json",
+                "--fail-on",
+                "off",
+            ],
+        )
+
+    def test_smoke_pypi_release_rejects_mismatched_cli_version(self) -> None:
+        with TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            fixture_root = root / "tests" / "fixtures" / "linux-root"
+            fixture_root.mkdir(parents=True)
+
+            def fake_run(command: list[str], **kwargs: object) -> SimpleNamespace:
+                if command[-1] == "--version":
+                    return SimpleNamespace(stdout="linwarden 1.2.4\n")
+                return SimpleNamespace(stdout="")
+
+            with self.assertRaisesRegex(RuntimeError, "installed linwarden version did not match 1.2.3"):
+                smoke_pypi_release(
+                    "1.2.3",
+                    fixture_root=fixture_root,
+                    venv_path=root / "venv",
+                    python="python3",
+                    runner=fake_run,
                 )
 
 

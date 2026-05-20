@@ -563,8 +563,23 @@ def _read_systemd_unit_text(
         seen.add(candidate)
         text = read_text(candidate)
         if text:
-            return text, str(candidate)
+            unit_texts = [text]
+            sources = [str(candidate)]
+            for drop_in in _systemd_drop_in_candidates(etc_root, service_name):
+                drop_in_text = read_text(drop_in)
+                if drop_in_text:
+                    unit_texts.append(drop_in_text)
+                    sources.append(str(drop_in))
+            return "\n".join(unit_texts), ", ".join(sources)
     return "", "not found"
+
+
+def _systemd_drop_in_candidates(etc_root: Path, service_name: str) -> tuple[Path, ...]:
+    drop_in_root = etc_root / "systemd" / "system" / f"{service_name}.d"
+    try:
+        return tuple(sorted(drop_in_root.glob("*.conf")))
+    except OSError:
+        return ()
 
 
 def _external_service_bind(unit_text: str) -> Optional[str]:
@@ -649,8 +664,12 @@ def _unit_values(unit_text: str, key: str, sections: tuple[str, ...]) -> tuple[s
         if not in_target_section or "=" not in line:
             continue
         raw_key, value = line.split("=", 1)
-        if raw_key.strip().lower() == key.lower() and value.strip():
-            values.append(value.strip())
+        if raw_key.strip().lower() == key.lower():
+            stripped_value = value.strip()
+            if stripped_value:
+                values.append(stripped_value)
+            else:
+                values.clear()
     return tuple(values)
 
 

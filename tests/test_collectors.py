@@ -278,6 +278,61 @@ class CollectorTests(unittest.TestCase):
         self.assertEqual(by_evidence["docker group members: deploy, ci-runner"].signal, "docker_group_members")
         self.assertNotIn("tcp://127.0.0.1:2376", by_evidence)
 
+    def test_collects_container_runtime_systemd_drop_in_exposure(self) -> None:
+        with TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            etc = root / "etc"
+            unit_dir = root / "usr" / "lib" / "systemd" / "system"
+            wants_dir = etc / "systemd" / "system" / "multi-user.target.wants"
+            drop_in_dir = etc / "systemd" / "system" / "docker.service.d"
+            etc.mkdir(parents=True)
+            unit_dir.mkdir(parents=True)
+            wants_dir.mkdir(parents=True)
+            drop_in_dir.mkdir(parents=True)
+            (etc / "os-release").write_text('ID="debian"\n', encoding="utf-8")
+            (unit_dir / "docker.service").write_text(
+                "[Service]\nExecStart=/usr/bin/dockerd --host unix:///var/run/docker.sock\n",
+                encoding="utf-8",
+            )
+            override = drop_in_dir / "override.conf"
+            override.write_text(
+                "[Service]\nExecStart=\nExecStart=/usr/bin/dockerd --host tcp://0.0.0.0:2375\n",
+                encoding="utf-8",
+            )
+            (wants_dir / "docker.service").symlink_to("/usr/lib/systemd/system/docker.service")
+
+            snapshot = collect_host_snapshot(root=root, proc_root=root / "proc", etc_root=etc)
+
+        by_evidence = {signal.evidence: signal for signal in snapshot.container_runtime_signals}
+        self.assertEqual(by_evidence["tcp://0.0.0.0:2375"].runtime, "docker")
+        self.assertIn(str(override), by_evidence["tcp://0.0.0.0:2375"].source)
+
+    def test_systemd_drop_in_exec_start_reset_avoids_stale_runtime_endpoint(self) -> None:
+        with TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            etc = root / "etc"
+            unit_dir = root / "usr" / "lib" / "systemd" / "system"
+            wants_dir = etc / "systemd" / "system" / "multi-user.target.wants"
+            drop_in_dir = etc / "systemd" / "system" / "docker.service.d"
+            etc.mkdir(parents=True)
+            unit_dir.mkdir(parents=True)
+            wants_dir.mkdir(parents=True)
+            drop_in_dir.mkdir(parents=True)
+            (etc / "os-release").write_text('ID="debian"\n', encoding="utf-8")
+            (unit_dir / "docker.service").write_text(
+                "[Service]\nExecStart=/usr/bin/dockerd --host tcp://0.0.0.0:2375\n",
+                encoding="utf-8",
+            )
+            (drop_in_dir / "override.conf").write_text(
+                "[Service]\nExecStart=\nExecStart=/usr/bin/dockerd --host unix:///var/run/docker.sock\n",
+                encoding="utf-8",
+            )
+            (wants_dir / "docker.service").symlink_to("/usr/lib/systemd/system/docker.service")
+
+            snapshot = collect_host_snapshot(root=root, proc_root=root / "proc", etc_root=etc)
+
+        self.assertEqual(snapshot.container_runtime_signals, ())
+
     def test_collects_package_vulnerabilities_from_local_feed(self) -> None:
         feed = Path(__file__).parent / "fixtures" / "vulnerability-feed.json"
 

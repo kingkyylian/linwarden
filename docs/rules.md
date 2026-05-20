@@ -199,11 +199,11 @@ Linwarden follows enabled service markers under `/etc/systemd/system/*.wants/*.s
 ### LNX-CTR-001: Container runtime API is bound to non-loopback TCP
 
 - Severity: high
-- Evidence: Docker or Podman TCP endpoint from `daemon.json` or enabled systemd unit files.
+- Evidence: Docker or Podman TCP endpoint from `daemon.json`, enabled systemd unit files, or enabled unit drop-ins.
 - Impact: A reachable runtime API can let remote clients control containers, mount host paths, or alter workload state.
 - Remediation: Bind runtime APIs to Unix sockets or loopback-only endpoints; use SSH or mutual TLS for required remote access.
 
-Linwarden currently checks `/etc/docker/daemon.json` `hosts` entries and enabled Docker or Podman systemd units for `tcp://` endpoints whose host is not loopback. Missing runtime files are treated as unknown, not safe.
+Linwarden currently checks `/etc/docker/daemon.json` `hosts` entries and enabled Docker or Podman systemd units, including unit drop-ins, for `tcp://` endpoints whose host is not loopback. Missing runtime files are treated as unknown, not safe.
 
 ### LNX-CTR-002: Docker group grants daemon-level access to users
 

@@ -204,6 +204,32 @@ class ReleaseAssetTests(unittest.TestCase):
                 ),
             )
 
+    def test_writes_release_notes_from_pyproject_version_for_dry_run_ref(self) -> None:
+        with TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            changelog = root / "CHANGELOG.md"
+            output = root / "release-notes.md"
+            pyproject = root / "pyproject.toml"
+            pyproject.write_text('[project]\nname = "linwarden"\nversion = "1.2.3"\n', encoding="utf-8")
+            changelog.write_text(
+                "\n".join(
+                    [
+                        "# Changelog",
+                        "",
+                        "## 1.2.3 - 2026-05-20",
+                        "",
+                        "- Dry-run notes come from the project version.",
+                        "",
+                    ]
+                ),
+                encoding="utf-8",
+            )
+            from scripts.changelog_release_notes import write_changelog_release_notes
+
+            write_changelog_release_notes(changelog=changelog, ref_name="main", output=output, pyproject=pyproject)
+
+            self.assertIn("Dry-run notes come from the project version.", output.read_text(encoding="utf-8"))
+
     def test_smoke_pypi_release_runs_install_and_cli_checks(self) -> None:
         with TemporaryDirectory() as temp_dir:
             root = Path(temp_dir)

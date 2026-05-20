@@ -130,8 +130,10 @@ class ActionMetadataTests(unittest.TestCase):
         self.assertIn("default: true", text)
         self.assertIn("Upload release dry-run artifacts", text)
         self.assertIn("name: release-dry-run-artifacts", text)
+        self.assertIn("path: |\n            dist/*\n            release-notes.md", text)
         self.assertIn("if: github.event_name == 'workflow_dispatch'", text)
         self.assertIn("if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')", text)
+        self.assertLess(text.index("Write release notes"), text.index("Upload release dry-run artifacts"))
 
     def test_release_workflow_verifies_tag_version_before_release_outputs(self) -> None:
         text = RELEASE_WORKFLOW.read_text(encoding="utf-8")
@@ -154,6 +156,11 @@ class ActionMetadataTests(unittest.TestCase):
         self.assertIn(
             "python scripts/changelog_release_notes.py --ref-name \"$GITHUB_REF_NAME\" "
             "--changelog CHANGELOG.md --output release-notes.md",
+            text,
+        )
+        self.assertIn(
+            "if: github.event_name == 'workflow_dispatch' || "
+            "(github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v'))",
             text,
         )
         self.assertIn("--notes-file release-notes.md", text)
@@ -180,6 +187,7 @@ class ActionMetadataTests(unittest.TestCase):
         self.assertIn("## Release Dry Run", docs)
         self.assertIn("gh workflow run release.yml", docs)
         self.assertIn("release-dry-run-artifacts", docs)
+        self.assertIn("release-notes.md", docs)
         self.assertIn("does not create a GitHub release", docs)
         self.assertIn("does not publish to PyPI", docs)
 

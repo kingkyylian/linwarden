@@ -69,7 +69,7 @@ jobs:
         run: python scripts/verify_release_version.py --ref-name "$GITHUB_REF_NAME" --dist-dir dist --changelog CHANGELOG.md
 
       - name: Write release notes
-        if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
+        if: github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v'))
         run: python scripts/changelog_release_notes.py --ref-name "$GITHUB_REF_NAME" --changelog CHANGELOG.md --output release-notes.md
 
       - name: Upload release dry-run artifacts
@@ -77,7 +77,9 @@ jobs:
         uses: actions/upload-artifact@v7
         with:
           name: release-dry-run-artifacts
-          path: dist/*
+          path: |
+            dist/*
+            release-notes.md
           if-no-files-found: error
           retention-days: 7
 

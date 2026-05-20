@@ -31,7 +31,7 @@ Use the manual workflow trigger to build and checksum release artifacts without 
 gh workflow run release.yml --repo kingkyylian/linwarden --ref main
 ```
 
-The dry run uploads `release-dry-run-artifacts` for inspection. It does not create a GitHub release, does not emit release attestations, and does not publish to PyPI. Tag pushes remain the only path that can create GitHub releases, attestations, or PyPI uploads.
+The dry run uploads `release-dry-run-artifacts` for inspection, including `dist/*` and `release-notes.md`. It does not create a GitHub release, does not emit release attestations, and does not publish to PyPI. Tag pushes remain the only path that can create GitHub releases, attestations, or PyPI uploads.
 
 ## PyPI Smoke Workflow
 

@@ -286,25 +286,31 @@ def _package_metadata_candidates(root: Path, manager: str) -> tuple[Path, ...]:
 def _read_firewall_status(etc_root: Path) -> FirewallStatus:
     ufw_config = etc_root / "ufw" / "ufw.conf"
     ufw_text = read_text(ufw_config)
+    ufw_status: Optional[FirewallStatus] = None
     if ufw_text:
         enabled = None
         for raw_line in ufw_text.splitlines():
             line = raw_line.strip()
             if line.startswith("ENABLED="):
                 enabled = line.split("=", 1)[1].strip().lower() == "yes"
-        return FirewallStatus(provider="ufw", enabled=enabled, source=str(ufw_config))
+        ufw_status = FirewallStatus(provider="ufw", enabled=enabled, source=str(ufw_config))
+        if enabled is True:
+            return ufw_status
 
     firewalld_marker = _enabled_systemd_unit_marker(etc_root, "firewalld.service")
     firewalld_config = etc_root / "firewalld" / "firewalld.conf"
     if firewalld_marker is not None:
         return FirewallStatus(provider="firewalld", enabled=True, source=str(firewalld_marker))
-    if firewalld_config.exists():
-        return FirewallStatus(provider="firewalld", enabled=None, source=str(firewalld_config))
 
     nftables_marker = _enabled_systemd_unit_marker(etc_root, "nftables.service")
     nftables_config = etc_root / "nftables.conf"
     if nftables_marker is not None:
         return FirewallStatus(provider="nftables", enabled=True, source=str(nftables_marker))
+
+    if ufw_status is not None:
+        return ufw_status
+    if firewalld_config.exists():
+        return FirewallStatus(provider="firewalld", enabled=None, source=str(firewalld_config))
     if nftables_config.exists():
         return FirewallStatus(provider="nftables", enabled=None, source=str(nftables_config))
 

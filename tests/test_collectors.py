@@ -139,6 +139,23 @@ class CollectorTests(unittest.TestCase):
         self.assertEqual(snapshot.firewall_status.enabled, True)
         self.assertEqual(snapshot.firewall_status.source, str(marker))
 
+    def test_prefers_enabled_nftables_over_disabled_ufw_config(self) -> None:
+        with TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            etc = root / "etc"
+            marker = etc / "systemd" / "system" / "sysinit.target.wants" / "nftables.service"
+            marker.parent.mkdir(parents=True)
+            (etc / "ufw").mkdir(parents=True)
+            (etc / "os-release").write_text('ID="debian"\n', encoding="utf-8")
+            (etc / "ufw" / "ufw.conf").write_text("ENABLED=no\n", encoding="utf-8")
+            marker.write_text("", encoding="utf-8")
+
+            snapshot = collect_host_snapshot(root=root, proc_root=root / "proc", etc_root=etc)
+
+        self.assertEqual(snapshot.firewall_status.provider, "nftables")
+        self.assertEqual(snapshot.firewall_status.enabled, True)
+        self.assertEqual(snapshot.firewall_status.source, str(marker))
+
     def test_collects_enabled_systemd_service_external_bind_exposure(self) -> None:
         with TemporaryDirectory() as temp_dir:
             root = Path(temp_dir)

@@ -181,7 +181,7 @@ Linwarden only emits this rule when `--vulnerability-feed` points to a local JSO
 - Impact: The host may expose services directly without local packet filtering.
 - Remediation: Enable the host firewall or document why perimeter controls are sufficient.
 
-Linwarden currently reads UFW config state directly and infers firewalld or nftables enablement from systemd enablement markers when present. A provider config file without a service marker is reported as unknown enabled state, not as disabled.
+Linwarden currently reads UFW config state directly and infers firewalld or nftables enablement from systemd enablement markers when present. Enabled firewalld or nftables markers take precedence over a disabled or ambiguous UFW config file, because an inactive UFW frontend does not prove that all host firewall policy is disabled. A provider config file without a service marker is reported as unknown enabled state, not as disabled.
 
 ## Service Rules
 

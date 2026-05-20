@@ -356,10 +356,6 @@ def _read_sysctl_bool(path: Path) -> Optional[bool]:
     return None
 
 
-def _systemd_wants_marker(etc_root: Path, service_name: str) -> Path:
-    return etc_root / "systemd" / "system" / "multi-user.target.wants" / service_name
-
-
 def _enabled_systemd_unit_marker(etc_root: Path, unit_name: str) -> Optional[Path]:
     for marker in _enabled_systemd_unit_markers(etc_root):
         if marker.name == unit_name:

@@ -164,6 +164,46 @@ class ReleaseAssetTests(unittest.TestCase):
                     changelog=changelog,
                 )
 
+    def test_writes_release_notes_from_changelog_section(self) -> None:
+        with TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            changelog = root / "CHANGELOG.md"
+            output = root / "release-notes.md"
+            changelog.write_text(
+                "\n".join(
+                    [
+                        "# Changelog",
+                        "",
+                        "## 1.2.3 - 2026-05-20",
+                        "",
+                        "- Added release notes from changelog.",
+                        "- Fixed publish notes drift.",
+                        "",
+                        "## 1.2.2 - 2026-05-19",
+                        "",
+                        "- Previous notes.",
+                        "",
+                    ]
+                ),
+                encoding="utf-8",
+            )
+            from scripts.changelog_release_notes import write_changelog_release_notes
+
+            write_changelog_release_notes(changelog=changelog, ref_name="v1.2.3", output=output)
+
+            self.assertEqual(
+                output.read_text(encoding="utf-8"),
+                "\n".join(
+                    [
+                        "## 1.2.3 - 2026-05-20",
+                        "",
+                        "- Added release notes from changelog.",
+                        "- Fixed publish notes drift.",
+                        "",
+                    ]
+                ),
+            )
+
     def test_smoke_pypi_release_runs_install_and_cli_checks(self) -> None:
         with TemporaryDirectory() as temp_dir:
             root = Path(temp_dir)

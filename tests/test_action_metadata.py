@@ -146,6 +146,22 @@ class ActionMetadataTests(unittest.TestCase):
         self.assertLess(text.index("Verify release version"), text.index("Generate artifact attestations"))
         self.assertLess(text.index("Verify release version"), text.index("Create GitHub release"))
 
+    def test_release_workflow_uses_changelog_for_github_release_body(self) -> None:
+        text = RELEASE_WORKFLOW.read_text(encoding="utf-8")
+        docs = RELEASE_DOCS.read_text(encoding="utf-8")
+
+        self.assertIn("Write release notes", text)
+        self.assertIn(
+            "python scripts/changelog_release_notes.py --ref-name \"$GITHUB_REF_NAME\" "
+            "--changelog CHANGELOG.md --output release-notes.md",
+            text,
+        )
+        self.assertIn("--notes-file release-notes.md", text)
+        self.assertNotIn("--generate-notes", text)
+        self.assertLess(text.index("Verify release version"), text.index("Write release notes"))
+        self.assertLess(text.index("Write release notes"), text.index("Create GitHub release"))
+        self.assertIn("GitHub release body is written from the matching `CHANGELOG.md` section", docs)
+
     def test_release_docs_cover_pypi_trusted_publisher_setup_and_rollback(self) -> None:
         docs = RELEASE_DOCS.read_text(encoding="utf-8")
 

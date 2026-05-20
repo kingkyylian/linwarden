@@ -68,6 +68,10 @@ jobs:
         if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
         run: python scripts/verify_release_version.py --ref-name "$GITHUB_REF_NAME" --dist-dir dist --changelog CHANGELOG.md
 
+      - name: Write release notes
+        if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
+        run: python scripts/changelog_release_notes.py --ref-name "$GITHUB_REF_NAME" --changelog CHANGELOG.md --output release-notes.md
+
       - name: Upload release dry-run artifacts
         if: github.event_name == 'workflow_dispatch'
         uses: actions/upload-artifact@v7
@@ -105,7 +109,7 @@ jobs:
         if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh release create "$GITHUB_REF_NAME" dist/* --generate-notes --title "$GITHUB_REF_NAME"
+        run: gh release create "$GITHUB_REF_NAME" dist/* --notes-file release-notes.md --title "$GITHUB_REF_NAME"
 
   publish-pypi:
     name: Publish to PyPI

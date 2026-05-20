@@ -94,6 +94,10 @@ def verify_dist_files(dist_dir: Path, version: str) -> None:
 
 
 def verify_changelog_section(changelog: Path, version: str) -> None:
+    changelog_release_notes(changelog, version)
+
+
+def changelog_release_notes(changelog: Path, version: str) -> str:
     try:
         lines = changelog.read_text(encoding="utf-8").splitlines()
     except OSError as exc:
@@ -101,20 +105,28 @@ def verify_changelog_section(changelog: Path, version: str) -> None:
 
     in_section = False
     saw_entry = False
+    section_lines: list[str] = []
     for raw_line in lines:
         line = raw_line.strip()
         if line.startswith("## "):
             if in_section:
                 break
             in_section = _is_changelog_version_heading(line, version)
+            if in_section:
+                section_lines.append(line)
             continue
-        if in_section and line.startswith("- "):
-            saw_entry = True
+        if in_section:
+            section_lines.append(raw_line.rstrip())
+            if line.startswith("- "):
+                saw_entry = True
 
     if not in_section:
         raise ValueError(f"changelog section for version {version} not found in {changelog}")
     if not saw_entry:
         raise ValueError(f"changelog section for version {version} has no entries")
+    while section_lines and section_lines[-1] == "":
+        section_lines.pop()
+    return "\n".join(section_lines) + "\n"
 
 
 def _is_changelog_version_heading(line: str, version: str) -> bool:

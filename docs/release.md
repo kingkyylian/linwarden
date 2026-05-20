@@ -7,7 +7,7 @@ git tag v0.13.1
 git push origin v0.13.1
 ```
 
-The release workflow validates the project, builds source and wheel artifacts, writes `dist/SHA256SUMS`, and emits GitHub artifact attestations for `dist/*`.
+The release workflow validates the project, builds source and wheel artifacts, writes `dist/SHA256SUMS`, and emits GitHub artifact attestations for `dist/*`. The GitHub release body is written from the matching `CHANGELOG.md` section.
 
 ## Release Checklist
 
@@ -17,10 +17,11 @@ The release workflow validates the project, builds source and wheel artifacts, w
 4. Run `python scripts/release_assets.py dist`.
 5. Confirm `dist/SHA256SUMS` contains only the intended release files.
 6. Run `python scripts/verify_release_version.py --ref-name v0.13.1 --dist-dir dist --changelog CHANGELOG.md`.
-7. Push the version tag.
-8. Verify each published artifact attestation with `gh attestation verify`.
-9. If PyPI publishing is enabled, run `python scripts/smoke_pypi_release.py v0.13.1`; it installs the released version from PyPI in a fresh environment, runs `linwarden --version`, runs `linwarden --help`, and runs a fixture scan.
-10. Link the release notes to [github-actions.md](github-actions.md), [comparison.md](comparison.md), and [launch.md](launch.md).
+7. Run `python scripts/changelog_release_notes.py --ref-name v0.13.1 --changelog CHANGELOG.md --output release-notes.md`.
+8. Push the version tag.
+9. Verify each published artifact attestation with `gh attestation verify`.
+10. If PyPI publishing is enabled, run `python scripts/smoke_pypi_release.py v0.13.1`; it installs the released version from PyPI in a fresh environment, runs `linwarden --version`, runs `linwarden --help`, and runs a fixture scan.
+11. Link the release notes to [github-actions.md](github-actions.md), [comparison.md](comparison.md), and [launch.md](launch.md).
 
 ## Release Dry Run
 

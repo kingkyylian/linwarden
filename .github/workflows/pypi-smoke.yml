@@ -1,0 +1,28 @@
+name: PyPI Smoke
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Release version to install from PyPI, with or without a leading v."
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  smoke:
+    name: Install release from PyPI
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.13"
+
+      - name: Smoke PyPI release
+        run: python scripts/smoke_pypi_release.py "${{ inputs.version }}"

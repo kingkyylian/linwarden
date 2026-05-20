@@ -5,6 +5,7 @@ ACTION = Path(__file__).resolve().parents[1] / "action.yml"
 DOCS = Path(__file__).resolve().parents[1] / "docs" / "github-actions.md"
 CI_WORKFLOW = Path(__file__).resolve().parents[1] / ".github" / "workflows" / "ci.yml"
 RELEASE_WORKFLOW = Path(__file__).resolve().parents[1] / ".github" / "workflows" / "release.yml"
+PYPI_SMOKE_WORKFLOW = Path(__file__).resolve().parents[1] / ".github" / "workflows" / "pypi-smoke.yml"
 RELEASE_DOCS = Path(__file__).resolve().parents[1] / "docs" / "release.md"
 
 
@@ -177,6 +178,19 @@ class ActionMetadataTests(unittest.TestCase):
         self.assertIn("scripts/smoke_pypi_release.py", docs)
         self.assertIn("linwarden --version", docs)
         self.assertIn("fixture scan", docs)
+
+    def test_pypi_smoke_workflow_runs_release_smoke_script(self) -> None:
+        text = PYPI_SMOKE_WORKFLOW.read_text(encoding="utf-8")
+        docs = RELEASE_DOCS.read_text(encoding="utf-8")
+
+        self.assertIn("workflow_dispatch:", text)
+        self.assertIn("version:", text)
+        self.assertIn("required: true", text)
+        self.assertIn("actions/checkout@v6", text)
+        self.assertIn("actions/setup-python@v6", text)
+        self.assertIn('python scripts/smoke_pypi_release.py "${{ inputs.version }}"', text)
+        self.assertIn("gh workflow run pypi-smoke.yml", docs)
+        self.assertIn("workflow run verifies", docs)
 
 
 if __name__ == "__main__":

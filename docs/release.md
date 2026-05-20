@@ -32,6 +32,16 @@ gh workflow run release.yml --repo kingkyylian/linwarden --ref main
 
 The dry run uploads `release-dry-run-artifacts` for inspection. It does not create a GitHub release, does not emit release attestations, and does not publish to PyPI. Tag pushes remain the only path that can create GitHub releases, attestations, or PyPI uploads.
 
+## PyPI Smoke Workflow
+
+After a PyPI publish, run the reusable smoke workflow:
+
+```bash
+gh workflow run pypi-smoke.yml --repo kingkyylian/linwarden --ref main -f version=v0.13.1
+```
+
+The workflow run verifies that the requested version installs from PyPI, reports the expected `linwarden --version`, prints `linwarden --help`, and completes a fixture scan.
+
 ## Release Version Guard
 
 The tag release workflow runs `scripts/verify_release_version.py` before signing, attestations, GitHub release creation, or PyPI publishing. The guard checks that the tag name matches `pyproject.toml`, runtime `__version__` matches `pyproject.toml`, and distribution filenames match that version.

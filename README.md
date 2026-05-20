@@ -38,7 +38,7 @@ Linwarden is not a CIS or STIG replacement. It is the lightweight first pass tha
 - Release checksum manifests with optional detached GPG signatures.
 - Severity scoring with `critical`, `high`, `medium`, and `low` buckets.
 - CI-friendly exit thresholds through `--fail-on`.
-- Composite GitHub Action wrapper through `uses: kingkyylian/linwarden@v0.13.0`.
+- Composite GitHub Action wrapper through `uses: kingkyylian/linwarden@v0.13.1`.
 - Fixture-root scanning for tests, containers, forensic copies, and offline analysis.
 - Zero runtime dependencies beyond Python 3.9+.
 
@@ -70,7 +70,7 @@ Exit code `2` means at least one finding matched the selected threshold.
 | --- | --- |
 | Local triage | `linwarden scan --format markdown` |
 | CI failure threshold | `linwarden scan --format json --fail-on high` |
-| GitHub code scanning | `uses: kingkyylian/linwarden@v0.13.0` |
+| GitHub code scanning | `uses: kingkyylian/linwarden@v0.13.1` |
 | Mounted image scan | `linwarden scan --root /mnt/server-image --format json` |
 | Effective SSH scan | `linwarden scan --sshd-mode effective --sshd-match user=deploy` |
 | Tool positioning | [docs/comparison.md](docs/comparison.md) |

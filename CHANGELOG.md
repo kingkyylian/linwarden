@@ -2,6 +2,10 @@
 
 All notable changes to Linwarden are documented here.
 
+## 0.13.1 - 2026-05-19
+
+- Prepared the first PyPI trusted-publishing release with refreshed release artifacts and documentation examples.
+
 ## 0.13.0 - 2026-05-15
 
 - Added `linwarden profiles` to list built-in scan profile behavior as Markdown or JSON.

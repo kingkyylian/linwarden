@@ -3,8 +3,8 @@
 Linwarden releases are tag-driven.
 
 ```bash
-git tag v0.13.0
-git push origin v0.13.0
+git tag v0.13.1
+git push origin v0.13.1
 ```
 
 The release workflow validates the project, builds source and wheel artifacts, writes `dist/SHA256SUMS`, and emits GitHub artifact attestations for `dist/*`.
@@ -16,7 +16,7 @@ The release workflow validates the project, builds source and wheel artifacts, w
 3. Run `make package PYTHON=.venv/bin/python`.
 4. Run `python scripts/release_assets.py dist`.
 5. Confirm `dist/SHA256SUMS` contains only the intended release files.
-6. Run `python scripts/verify_release_version.py --ref-name v0.13.0 --dist-dir dist`.
+6. Run `python scripts/verify_release_version.py --ref-name v0.13.1 --dist-dir dist`.
 7. Push the version tag.
 8. Verify each published artifact attestation with `gh attestation verify`.
 9. Link the release notes to [github-actions.md](github-actions.md), [comparison.md](comparison.md), and [launch.md](launch.md).

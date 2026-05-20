@@ -13,6 +13,13 @@ Linwarden is a small Linux hardening scanner for CI and fleet triage.
 It reads ordinary `/etc`, `/proc`, and `/sys` files, explains risky SSH/kernel/network/filesystem/package/firewall defaults, and emits Markdown, JSON, or SARIF. It is read-only, rootless by default, and works against live hosts, mounted roots, containers, and test fixtures.
 
 Repository: https://github.com/kingkyylian/linwarden
+PyPI: https://pypi.org/project/linwarden/
+
+Install:
+
+```bash
+python3 -m pip install linwarden
+```
 
 ## Show HN Draft
 
@@ -30,6 +37,8 @@ I built Linwarden as a small read-only Linux hardening scanner for teams that wa
 It reads ordinary files under /etc, /proc, and /sys, evaluates explainable rules, and emits Markdown, JSON, or SARIF for GitHub code scanning. It can also scan mounted roots and fixture directories, which makes it useful for image checks and offline analysis.
 
 It is not meant to replace CIS/STIG tooling. The goal is fast, auditable triage with stable artifacts.
+
+Install: python3 -m pip install linwarden
 ```
 
 ## Reddit Draft
@@ -52,6 +61,7 @@ Feedback on useful Linux hardening rules and distro fixtures would be valuable.
 
 - Pin the current release tag.
 - Attach `SHA256SUMS` and, if configured, `SHA256SUMS.asc`.
+- Confirm PyPI install smoke for the current version.
 - Add a terminal GIF or screenshot showing `linwarden scan --format markdown`.
 - Link to [docs/github-actions.md](github-actions.md) from the release notes.
 - Open contributor-friendly issues from [docs/contributor-ideas.md](contributor-ideas.md).

@@ -1,6 +1,7 @@
 # Linwarden
 
 [![CI](https://github.com/kingkyylian/linwarden/actions/workflows/ci.yml/badge.svg)](https://github.com/kingkyylian/linwarden/actions/workflows/ci.yml)
+[![PyPI](https://img.shields.io/pypi/v/linwarden.svg)](https://pypi.org/project/linwarden/)
 [![Python](https://img.shields.io/badge/python-3.9%2B-blue.svg)](pyproject.toml)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 
@@ -44,7 +45,21 @@ Linwarden is not a CIS or STIG replacement. It is the lightweight first pass tha
 
 ## Quick Start
 
-From a checkout:
+Install from PyPI:
+
+```bash
+python3 -m pip install linwarden
+linwarden --version
+linwarden scan --format markdown
+```
+
+For an isolated CLI install:
+
+```bash
+pipx install linwarden
+```
+
+From a development checkout:
 
 ```bash
 python3 -m venv .venv
@@ -252,7 +267,9 @@ Please report vulnerabilities using [SECURITY.md](SECURITY.md).
 
 ## Roadmap
 
-- PyPI trusted publishing.
+- Fixture-backed distro coverage for package metadata and firewall posture.
+- Static container runtime signals only when evidence is reliable and rootless.
+- Release checks that keep GitHub artifacts, attestations, and PyPI installs verifiable.
 
 Contributor-ready ideas live in [docs/contributor-ideas.md](docs/contributor-ideas.md).
 

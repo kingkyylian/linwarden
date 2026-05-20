@@ -2,11 +2,14 @@
 
 ## Near Term
 
-- Configure PyPI trusted publishing.
+- Keep release verification tight now that PyPI publishing is live, including post-release install smoke tests.
+- Expand fixture-backed distro coverage for package metadata freshness and firewall posture.
+- Add static container runtime signals only when the evidence is reliable from files, config, groups, or systemd units.
 
 ## Later
 
-- Add more static container runtime signals only when evidence is reliable and fixture-backed.
+- Add more SARIF and JSON report contract tests around externally consumed fields.
+- Improve contributor-ready issue scoping from proven fixture gaps.
 
 ## Non-Goals
 

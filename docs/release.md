@@ -19,7 +19,8 @@ The release workflow validates the project, builds source and wheel artifacts, w
 6. Run `python scripts/verify_release_version.py --ref-name v0.13.1 --dist-dir dist`.
 7. Push the version tag.
 8. Verify each published artifact attestation with `gh attestation verify`.
-9. Link the release notes to [github-actions.md](github-actions.md), [comparison.md](comparison.md), and [launch.md](launch.md).
+9. If PyPI publishing is enabled, install the released version from PyPI in a fresh environment and run `linwarden --version`, `linwarden --help`, and a fixture scan.
+10. Link the release notes to [github-actions.md](github-actions.md), [comparison.md](comparison.md), and [launch.md](launch.md).
 
 ## Release Dry Run
 
@@ -85,5 +86,6 @@ After enabling, verify the next tag release by confirming:
 - the `build` job created the GitHub release, checksums, optional signature, and attestations
 - the `publish-pypi` job ran under the `pypi` environment
 - PyPI shows the uploaded source distribution and wheel for the release version
+- a fresh install from PyPI runs the released CLI version and a fixture scan
 
 References: [PyPI trusted publisher setup](https://docs.pypi.org/trusted-publishers/adding-a-publisher/), [pending publisher setup](https://docs.pypi.org/trusted-publishers/creating-a-project-through-oidc/), and [publishing with a trusted publisher](https://docs.pypi.org/trusted-publishers/using-a-publisher/).

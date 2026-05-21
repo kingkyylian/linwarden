@@ -142,6 +142,41 @@ class DistroFixtureTests(unittest.TestCase):
         self.assertEqual(snapshot.package_status.metadata_source, str(in_release))
         self.assertEqual(findings["LNX-PKG-003"].severity, "medium")
 
+    def test_dnf_metadata_uses_repomd_marker_not_cache_directory(self) -> None:
+        with TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            etc = root / "etc"
+            repomd = root / "var" / "cache" / "dnf" / "fedora-fixture" / "repodata" / "repomd.xml"
+            etc.mkdir()
+            repomd.parent.mkdir(parents=True)
+            (etc / "os-release").write_text('ID="fedora"\n', encoding="utf-8")
+            repomd.write_text("<repomd />\n", encoding="utf-8")
+            old_timestamp = time.time() - (18 * 86400)
+            os.utime(repomd, (old_timestamp, old_timestamp))
+
+            snapshot = collect_host_snapshot(root=root, proc_root=root / "proc", etc_root=etc)
+            findings = {finding.rule_id: finding for finding in evaluate_snapshot(snapshot)}
+
+        self.assertEqual(snapshot.package_status.manager, "dnf")
+        self.assertGreaterEqual(snapshot.package_status.metadata_age_days or 0, 17)
+        self.assertEqual(snapshot.package_status.metadata_source, str(repomd))
+        self.assertEqual(findings["LNX-PKG-003"].severity, "medium")
+
+    def test_dnf_metadata_ignores_empty_cache_directory(self) -> None:
+        with TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            etc = root / "etc"
+            cache_dir = root / "var" / "cache" / "dnf"
+            etc.mkdir()
+            cache_dir.mkdir(parents=True)
+            (etc / "os-release").write_text('ID="fedora"\n', encoding="utf-8")
+
+            snapshot = collect_host_snapshot(root=root, proc_root=root / "proc", etc_root=etc)
+
+        self.assertEqual(snapshot.package_status.manager, "dnf")
+        self.assertIsNone(snapshot.package_status.metadata_age_days)
+        self.assertEqual(snapshot.package_status.metadata_source, "not found")
+
     def test_fedora_fixture_covers_firewalld_and_dnf_metadata(self) -> None:
         root = FIXTURE_DIR / "fedora-root"
         snapshot = collect_host_snapshot(root=root, proc_root=root / "proc", etc_root=root / "etc")

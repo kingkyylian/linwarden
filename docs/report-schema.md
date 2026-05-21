@@ -45,8 +45,8 @@ The machine-readable JSON Schema artifact lives at [`schemas/report.schema.json`
 | `updates_available` | integer or null | Pending package update count when a rootless status source exposes it. |
 | `security_updates` | integer or null | Pending security update count when a rootless status source exposes it. |
 | `source` | string | Source used for update counts, or `not found`. |
-| `metadata_age_days` | integer or null | Age of the newest known local package metadata marker. |
-| `metadata_source` | string | Source used for metadata age, or `not found`. |
+| `metadata_age_days` | integer or null | Age of the newest known local package metadata marker file. |
+| `metadata_source` | string | Source file used for metadata age, or `not found`. Cache directories alone are not treated as package metadata. |
 
 ## Bridge Interface
 

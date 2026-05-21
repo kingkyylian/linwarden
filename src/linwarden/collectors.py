@@ -272,9 +272,10 @@ def _package_metadata_candidates(root: Path, manager: str) -> tuple[Path, ...]:
             *tuple(sorted(apt_lists.glob("*Release"))),
         )
     if manager == "dnf":
+        dnf_cache = root / "var" / "cache" / "dnf"
         return (
-            root / "var" / "cache" / "dnf" / "expired_repos.json",
-            root / "var" / "cache" / "dnf",
+            dnf_cache / "expired_repos.json",
+            *tuple(sorted(dnf_cache.glob("**/repodata/repomd.xml"))),
         )
     if manager == "pacman":
         return tuple(sorted((root / "var" / "lib" / "pacman" / "sync").glob("*.db")))

@@ -2,6 +2,10 @@
 
 All notable changes to Linwarden are documented here.
 
+## Unreleased
+
+- Tightened DNF package metadata freshness collection to use explicit `repodata/repomd.xml` or `expired_repos.json` markers instead of cache directory mtimes.
+
 ## 0.13.1 - 2026-05-19
 
 - Prepared the first PyPI trusted-publishing release with refreshed release artifacts and documentation examples.

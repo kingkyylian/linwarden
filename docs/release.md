@@ -43,6 +43,28 @@ gh workflow run pypi-smoke.yml --repo kingkyylian/linwarden --ref main -f versio
 
 The workflow run verifies that the requested version installs from PyPI, reports the expected `linwarden --version`, prints `linwarden --help`, and completes a fixture scan.
 
+## PyPI Install Smoke Transcript
+
+This transcript was captured from a fresh virtual environment against the published `linwarden==0.13.1` wheel on PyPI. Paths are shown through `SMOKE_VENV` so the commands stay copy-pasteable.
+
+```bash
+$ SMOKE_VENV="$(mktemp -d)/venv"
+$ python -m venv "$SMOKE_VENV"
+$ "$SMOKE_VENV/bin/python" -m pip install --no-cache-dir linwarden==0.13.1
+Collecting linwarden==0.13.1
+Downloading linwarden-0.13.1-py3-none-any.whl ...
+Installing collected packages: linwarden
+Successfully installed linwarden-0.13.1
+
+$ "$SMOKE_VENV/bin/linwarden" --version
+linwarden 0.13.1
+
+$ "$SMOKE_VENV/bin/linwarden" --help
+usage: linwarden [-h] [--version] {scan,profiles} ...
+
+Rootless Linux host inventory and hardening audit CLI.
+```
+
 ## Release Version Guard
 
 The tag release workflow runs `scripts/verify_release_version.py` before signing, attestations, GitHub release creation, or PyPI publishing. The guard checks that the tag name matches `pyproject.toml`, runtime `__version__` matches `pyproject.toml`, distribution filenames match that version, and `CHANGELOG.md` has a dated section for the release version with at least one entry.

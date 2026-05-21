@@ -208,6 +208,16 @@ class ActionMetadataTests(unittest.TestCase):
         self.assertIn("linwarden --version", docs)
         self.assertIn("fixture scan", docs)
 
+    def test_release_docs_include_pypi_install_smoke_transcript(self) -> None:
+        docs = RELEASE_DOCS.read_text(encoding="utf-8")
+
+        self.assertIn("## PyPI Install Smoke Transcript", docs)
+        self.assertIn('python -m venv "$SMOKE_VENV"', docs)
+        self.assertIn("pip install --no-cache-dir linwarden==0.13.1", docs)
+        self.assertIn("Successfully installed linwarden-0.13.1", docs)
+        self.assertIn("linwarden 0.13.1", docs)
+        self.assertIn("usage: linwarden [-h] [--version] {scan,profiles} ...", docs)
+
     def test_pypi_smoke_workflow_runs_release_smoke_script(self) -> None:
         text = PYPI_SMOKE_WORKFLOW.read_text(encoding="utf-8")
         docs = RELEASE_DOCS.read_text(encoding="utf-8")

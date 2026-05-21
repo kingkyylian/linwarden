@@ -9,14 +9,14 @@ Use the GitHub issues as the source of truth for active contributor work. Keep n
 | Issue | Area | Scope | Acceptance focus |
 | --- | --- | --- | --- |
 | [#19](https://github.com/kingkyylian/linwarden/issues/19) | Docs | Add a short PyPI install smoke transcript. | Fresh environment, PyPI install for an explicit released version, `linwarden --version`, and one minimal CLI proof. |
-| [#20](https://github.com/kingkyylian/linwarden/issues/20) | Fixtures | Add one supported-distro package metadata freshness fixture. | Deterministic local fixture, no network/package manager calls, and a test proving metadata age/source behavior. |
 | [#21](https://github.com/kingkyylian/linwarden/issues/21) | Containers | Expand static container runtime posture from reliable local evidence. | Fixture-backed signal from local files only; no Docker/Podman/Kubernetes/systemctl calls and no safety inference from missing files. |
-| [#18](https://github.com/kingkyylian/linwarden/issues/18) | Rules | Refactor `rules.py` as checks grow. | Keep rule metadata stable while reducing the pressure to add more logic to one large evaluator. |
 
 ## Completed Or Retired Candidates
 
 | Area | Original idea | Resolution |
 | --- | --- | --- |
+| Fixtures | Add one supported-distro package metadata freshness fixture. | Covered by `d8c4171`, which tightens DNF metadata freshness around explicit marker files. |
+| Rules | Refactor `rules.py` as checks grow. | Covered by the registry-based rule evaluator, which keeps rule metadata stable while moving each rule into a small function. |
 | Release | Add automated post-release install smoke guidance or workflow support. | Covered by `scripts/smoke_pypi_release.py`, `.github/workflows/pypi-smoke.yml`, and the release dry-run notes artifact flow. |
 | Rules | Add a narrow firewall posture edge case only when local files prove the state. | Covered by `680bca4`, which prevents disabled UFW config from hiding enabled nftables/firewalld markers. |
 

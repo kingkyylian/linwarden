@@ -5,6 +5,7 @@ All notable changes to Linwarden are documented here.
 ## Unreleased
 
 - Tightened DNF package metadata freshness collection to use explicit `repodata/repomd.xml` or `expired_repos.json` markers instead of cache directory mtimes.
+- Refactored rule evaluation around a registry of small rule functions so new checks no longer require editing one large evaluator body.
 
 ## 0.13.1 - 2026-05-19
 

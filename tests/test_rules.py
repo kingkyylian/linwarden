@@ -1,15 +1,60 @@
+import re
 import unittest
 from dataclasses import replace
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
+from linwarden import rules
 from linwarden.collectors import collect_host_snapshot
+from linwarden.models import Finding
 from linwarden.rules import evaluate_snapshot, summarize_findings
 
 FIXTURE_ROOT = Path(__file__).parent / "fixtures" / "linux-root"
 
 
 class RuleTests(unittest.TestCase):
+    def test_evaluate_snapshot_runs_registered_rule_functions(self) -> None:
+        snapshot = collect_host_snapshot(
+            root=FIXTURE_ROOT,
+            proc_root=FIXTURE_ROOT / "proc",
+            etc_root=FIXTURE_ROOT / "etc",
+        )
+        calls: list[str] = []
+
+        def synthetic_rule(received_snapshot):
+            calls.append(received_snapshot.hostname)
+            return (
+                Finding(
+                    rule_id="TST-001",
+                    severity="low",
+                    title="Synthetic registry rule",
+                    category="test",
+                    evidence="synthetic evidence",
+                    impact="synthetic impact",
+                    remediation="synthetic remediation",
+                ),
+            )
+
+        original_rules = rules.RULES
+        rules.RULES = (
+            rules.RuleDefinition(rule_id="TST-001", category="test", evaluate=synthetic_rule),
+        )
+        try:
+            findings = evaluate_snapshot(snapshot)
+        finally:
+            rules.RULES = original_rules
+
+        self.assertEqual(calls, [snapshot.hostname])
+        self.assertEqual([finding.rule_id for finding in findings], ["TST-001"])
+
+    def test_registered_rules_match_rule_catalog(self) -> None:
+        catalog = (Path(__file__).resolve().parents[1] / "docs" / "rules.md").read_text(encoding="utf-8")
+        documented_rule_ids = set(re.findall(r"^### (LNX-[A-Z]+-\d{3}):", catalog, flags=re.MULTILINE))
+        registered_rule_ids = [rule.rule_id for rule in rules.RULES]
+
+        self.assertEqual(set(registered_rule_ids), documented_rule_ids)
+        self.assertEqual(len(registered_rule_ids), len(set(registered_rule_ids)))
+
     def test_evaluates_security_findings_with_actionable_metadata(self) -> None:
         snapshot = collect_host_snapshot(
             root=FIXTURE_ROOT,

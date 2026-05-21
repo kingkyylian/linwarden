@@ -22,7 +22,7 @@ CLI args
 | `config.py` | Profiles, disabled rules, and justified suppressions. |
 | `collectors.py` | Builds a `HostSnapshot` from Linux filesystem inputs. |
 | `parsers.py` | Parses small Linux text formats such as `os-release`, `meminfo`, and `mounts`. |
-| `rules.py` | Converts a snapshot into actionable findings. |
+| `rules.py` | Converts a snapshot into actionable findings through a registry of small rule functions. |
 | `reporters.py` | Converts snapshots and findings into JSON, Markdown, or SARIF artifacts. |
 | `models.py` | Dataclasses shared across the scanner. |
 

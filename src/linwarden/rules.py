@@ -558,6 +558,32 @@ def _container_runtime_docker_group_members(snapshot: HostSnapshot) -> list[Find
     return findings
 
 
+def _container_runtime_userns_remap_disabled(snapshot: HostSnapshot) -> list[Finding]:
+    findings: list[Finding] = []
+    for signal in snapshot.container_runtime_signals:
+        if signal.signal != "userns_remap_disabled":
+            continue
+        findings.append(
+            Finding(
+                rule_id="LNX-CTR-003",
+                severity="medium",
+                title="Docker user namespace remapping is explicitly disabled",
+                category="containers",
+                evidence=f"{signal.evidence} from {signal.source}",
+                impact=(
+                    "Containers that run as root are not remapped to an unprivileged host UID range, "
+                    "which weakens isolation when a workload escapes its container boundary."
+                ),
+                remediation=(
+                    'Configure Docker daemon `"userns-remap": "default"` or a dedicated remap user '
+                    "after validating subordinate UID/GID ranges and workload compatibility."
+                ),
+                references=("https://docs.docker.com/engine/security/userns-remap/",),
+            )
+        )
+    return findings
+
+
 RULES: tuple[RuleDefinition, ...] = (
     RuleDefinition("LNX-SSH-001", "ssh", _ssh_root_login),
     RuleDefinition("LNX-SSH-002", "ssh", _ssh_password_authentication),
@@ -584,6 +610,7 @@ RULES: tuple[RuleDefinition, ...] = (
     RuleDefinition("LNX-SVC-001", "services", _systemd_service_exposures),
     RuleDefinition("LNX-CTR-001", "containers", _container_runtime_tcp_api),
     RuleDefinition("LNX-CTR-002", "containers", _container_runtime_docker_group_members),
+    RuleDefinition("LNX-CTR-003", "containers", _container_runtime_userns_remap_disabled),
 )
 
 

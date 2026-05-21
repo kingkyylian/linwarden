@@ -223,6 +223,42 @@ class RuleTests(unittest.TestCase):
         self.assertIn("deploy", by_rule["LNX-CTR-002"].evidence)
         self.assertIn("docker group", by_rule["LNX-CTR-002"].remediation)
 
+    def test_flags_explicitly_disabled_docker_user_namespace_remapping(self) -> None:
+        with TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            etc = root / "etc"
+            docker_config = etc / "docker" / "daemon.json"
+            etc.mkdir(parents=True)
+            docker_config.parent.mkdir(parents=True)
+            (etc / "os-release").write_text('ID="debian"\n', encoding="utf-8")
+            docker_config.write_text('{"userns-remap": "disabled"}\n', encoding="utf-8")
+
+            snapshot = collect_host_snapshot(root=root, proc_root=root / "proc", etc_root=etc)
+
+        signals = {signal.signal: signal for signal in snapshot.container_runtime_signals}
+        by_rule = {finding.rule_id: finding for finding in evaluate_snapshot(snapshot)}
+
+        self.assertEqual(signals["userns_remap_disabled"].runtime, "docker")
+        self.assertIn("userns-remap disabled", signals["userns_remap_disabled"].evidence)
+        self.assertEqual(by_rule["LNX-CTR-003"].severity, "medium")
+        self.assertIn("userns-remap disabled", by_rule["LNX-CTR-003"].evidence)
+        self.assertIn("userns-remap", by_rule["LNX-CTR-003"].remediation)
+
+    def test_missing_docker_user_namespace_config_stays_unknown(self) -> None:
+        with TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            etc = root / "etc"
+            etc.mkdir(parents=True)
+            (etc / "os-release").write_text('ID="debian"\n', encoding="utf-8")
+
+            snapshot = collect_host_snapshot(root=root, proc_root=root / "proc", etc_root=etc)
+
+        signal_names = {signal.signal for signal in snapshot.container_runtime_signals}
+        rule_ids = {finding.rule_id for finding in evaluate_snapshot(snapshot)}
+
+        self.assertNotIn("userns_remap_disabled", signal_names)
+        self.assertNotIn("LNX-CTR-003", rule_ids)
+
     def test_flags_package_vulnerabilities_from_local_feed(self) -> None:
         feed = Path(__file__).parent / "fixtures" / "vulnerability-feed.json"
         snapshot = collect_host_snapshot(

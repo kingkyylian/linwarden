@@ -419,20 +419,29 @@ def _read_docker_daemon_json_signals(path: Path) -> tuple[ContainerRuntimeSignal
         return ()
     if not isinstance(payload, dict):
         return ()
-    hosts = payload.get("hosts")
-    if not isinstance(hosts, list):
-        return ()
     signals: list[ContainerRuntimeSignal] = []
-    for host in hosts:
-        if isinstance(host, str) and _is_external_tcp_endpoint(host):
-            signals.append(
-                ContainerRuntimeSignal(
-                    runtime="docker",
-                    signal="tcp_api",
-                    evidence=host.strip(),
-                    source=str(path),
+    hosts = payload.get("hosts")
+    if isinstance(hosts, list):
+        for host in hosts:
+            if isinstance(host, str) and _is_external_tcp_endpoint(host):
+                signals.append(
+                    ContainerRuntimeSignal(
+                        runtime="docker",
+                        signal="tcp_api",
+                        evidence=host.strip(),
+                        source=str(path),
+                    )
                 )
+    userns_remap = payload.get("userns-remap")
+    if isinstance(userns_remap, str) and userns_remap.strip().lower() in {"disabled", "false", "no", "none"}:
+        signals.append(
+            ContainerRuntimeSignal(
+                runtime="docker",
+                signal="userns_remap_disabled",
+                evidence=f"userns-remap {userns_remap.strip()}",
+                source=str(path),
             )
+        )
     return tuple(signals)
 
 

@@ -213,3 +213,12 @@ Linwarden currently checks `/etc/docker/daemon.json` `hosts` entries and enabled
 - Remediation: Remove unnecessary users from the `docker` group; prefer sudo auditing or rootless Docker where non-root operation is required.
 
 Linwarden only reports explicit members listed in the `docker` group entry. It does not infer nested directory service groups or live socket permissions.
+
+### LNX-CTR-003: Docker user namespace remapping is explicitly disabled
+
+- Severity: medium
+- Evidence: `userns-remap disabled` from `/etc/docker/daemon.json`.
+- Impact: Containers that run as root are not remapped to an unprivileged host UID range.
+- Remediation: Configure Docker daemon `"userns-remap": "default"` or a dedicated remap user after validating subordinate UID/GID ranges and workload compatibility.
+
+Linwarden only reports this rule when `/etc/docker/daemon.json` explicitly disables `userns-remap`. A missing Docker daemon config or missing `userns-remap` field remains unknown, not safe or unsafe.

@@ -60,7 +60,7 @@ Package vulnerability feed ingestion is explicit and local-only. The CLI reads t
 
 Systemd service exposure detection is static. It follows enabled service markers inside the scanned root and flags common wildcard bind options such as `--bind 0.0.0.0` or `--listen [::]:PORT`; it does not call `systemctl` or inspect live sockets.
 
-Container runtime posture detection is static and conservative. It flags explicit Docker or Podman non-loopback TCP API endpoints from configuration or enabled unit files, and explicit non-root Docker group members from `/etc/group`. It does not call Docker, Podman, `systemctl`, or inspect live sockets.
+Container runtime posture detection is static and conservative. It flags explicit Docker or Podman non-loopback TCP API endpoints from configuration or enabled unit files, explicit non-root Docker group members from `/etc/group`, and Docker daemon configs that explicitly disable user namespace remapping. It does not call Docker, Podman, `systemctl`, or inspect live sockets.
 
 Missing files are treated as absent data, not fatal errors. This keeps the CLI usable in containers, rescue mounts, and partial forensic copies.
 

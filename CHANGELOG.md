@@ -4,6 +4,7 @@ All notable changes to Linwarden are documented here.
 
 ## Unreleased
 
+- Added a Docker daemon config rule for explicitly disabled `userns-remap` when visible from local files.
 - Tightened DNF package metadata freshness collection to use explicit `repodata/repomd.xml` or `expired_repos.json` markers instead of cache directory mtimes.
 - Refactored rule evaluation around a registry of small rule functions so new checks no longer require editing one large evaluator body.
 
